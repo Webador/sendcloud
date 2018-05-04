@@ -1,0 +1,19 @@
+{
+    "name": "villermen/sendcloud",
+    "description": "Provides a client to interact with the SendCloud API.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Villermen",
+            "email": "villermen@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1",
+        "guzzlehttp/guzzle": "^6.3"
+    },
+    "autoload": {
+        "Villermen\\SendCloud\\": "src"
+    }
+}
