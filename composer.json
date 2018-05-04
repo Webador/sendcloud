@@ -14,6 +14,8 @@
         "guzzlehttp/guzzle": "^6.3"
     },
     "autoload": {
-        "Villermen\\SendCloud\\": "src"
+        "psr-4": {
+            "Villermen\\SendCloud\\": "src"
+        }
     }
 }

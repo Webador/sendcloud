@@ -19,7 +19,7 @@ class ShippingMethod
     /** @var string */
     protected $carrier;
 
-    /** @var float[] */
+    /** @var int[] */
     protected $prices = [];
 
     public function __construct(\stdClass $data)
@@ -31,7 +31,7 @@ class ShippingMethod
         $this->carrier = (string)$data->carrier;
 
         foreach ((array)$data->countries as $country) {
-            $this->prices[$country->iso_2] = (float)$country->price;
+            $this->prices[$country->iso_2] = (int)($country->price * 100);
         }
     }
 
@@ -76,16 +76,16 @@ class ShippingMethod
     }
 
     /**
-     * Prices, indexed by country code.
+     * Prices, in cents, indexed by country code.
      *
-     * @return float[]
+     * @return int[]
      */
     public function getPrices(): array
     {
         return $this->prices;
     }
 
-    public function getPriceForCountry(string $countryCode): ?float
+    public function getPriceForCountry(string $countryCode): ?int
     {
         return $this->prices[$countryCode] ?? null;
     }
