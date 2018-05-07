@@ -64,11 +64,7 @@ class Client
         try {
             return new User(json_decode($this->guzzleClient->get('user')->getBody())->user);
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw new SendCloudRequestException(
-                'An error occurred while fetching the SendCloud user.',
-                0,
-                $exception
-            );
+            throw $this->createRequestException('An error occurred while fetching the SendCloud user.', $exception);
         }
     }
 
@@ -99,9 +95,8 @@ class Client
 
             return $shippingMethods;
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw new SendCloudRequestException(
+            throw $this->createRequestException(
                 'An error occurred while fetching shipping methods from the SendCloud API.',
-                0,
                 $exception
             );
         }
@@ -132,6 +127,207 @@ class Client
         bool $requestLabel = true,
         $senderAddress = null
     ): Parcel {
+        $parcelData = $this->getParcelData(
+            $shippingAddress,
+            $orderNumber,
+            $shippingMethod,
+            $weight,
+            $requestLabel,
+            $senderAddress
+        );
+
+        try {
+            $response = $this->guzzleClient->post('parcels', [
+                'json' => [
+                    'parcel' => $parcelData
+                ]
+            ]);
+
+            return new Parcel(json_decode($response->getBody())->parcel);
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            // Precondition failed
+            if ($exception->getCode() === 412) {
+                throw new SendCloudRequestException(
+                    sprintf(
+                        'SendCloud account is not fully configured yet. (%s).',
+                        json_decode($exception->getResponse()->getBody())->error->message
+                    ),
+                    0,
+                    $exception
+                );
+            }
+
+            throw $this->createRequestException('Could not create parcel with SendCloud.', $exception);
+        }
+    }
+
+    /**
+     * Update details of an existing parcel.
+     * This will fail for parcels that already have a label.
+     *
+     * @param Parcel|int $parcel A parcel or parcel ID.
+     * @param Address $shippingAddress
+     * @param string|null $orderNumber
+     * @param int|ShippingMethod|null $shippingMethod
+     * @param int|null $weight
+     * @param bool $requestLabel
+     * @param SenderAddress|null $senderAddress
+     * @return Parcel
+     * @throws SendCloudRequestException
+     * @see createParcel()
+     */
+    public function updateParcel(
+        $parcel,
+        Address $shippingAddress,
+        ?string $orderNumber = null,
+        $shippingMethod = null,
+        ?int $weight = null,
+        bool $requestLabel = true,
+        $senderAddress = null
+    ): Parcel {
+        if ($parcel instanceof Parcel) {
+            /** @var Parcel $parcel */
+            $parcel = $parcel->getId();
+        } elseif (!is_int($parcel)) {
+            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
+        }
+
+        $parcelData = $this->getParcelData(
+            $shippingAddress,
+            $orderNumber,
+            $shippingMethod,
+            $weight,
+            $requestLabel,
+            $senderAddress
+        );
+
+        $parcelData['id'] = $parcel;
+
+        try {
+            $response = $this->guzzleClient->put('parcels', [
+                'json' => [
+                    'parcel' => $parcelData,
+                ]
+            ]);
+
+            return new Parcel(json_decode($response->getBody()));
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            throw $this->createRequestException('Could not update parcel with SendCloud.', $exception);
+        }
+    }
+
+    /**
+     * Cancels a parcel.
+     * Returns whether the parcel was successfully cancelled.
+     *
+     * @param $parcel
+     * @return bool
+     * @throws SendCloudRequestException
+     */
+    public function cancelParcel($parcel): bool
+    {
+        if ($parcel instanceof Parcel) {
+            /** @var Parcel $parcel */
+            $parcel = $parcel->getId();
+        } elseif (!is_int($parcel)) {
+            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
+        }
+        /** @var int $parcel */
+
+        try {
+            $status = json_decode($this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcel))->getBody())->status;
+            return ($status === 'cancelled');
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
+
+            if (in_array($statusCode, [400, 410])) {
+                return false;
+            }
+
+            throw $this->createRequestException('An error occurred while cancelling the parcel.', $exception);
+        }
+    }
+
+    /**
+     * Fetches the PDF label for the given parcel;
+     * The parcel must already have a label created.
+     *
+     * @param Parcel|int $parcel
+     * @param int $format `Parcel::LABEL_FORMATS`
+     * @return string PDF data.
+     * @throws SendCloudClientException
+     */
+    public function getLabel($parcel, int $format): string
+    {
+        if (!in_array($format, Parcel::LABEL_FORMATS)) {
+            throw new \InvalidArgumentException('Invalid label format given.');
+        }
+
+        if (is_int($parcel)) {
+            /** @var int $parcel */
+            $parcel = $this->getParcel($parcel);
+        } elseif (!($parcel instanceof Parcel)) {
+            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
+        }
+        /** @var Parcel $parcel */
+
+        $labelUrl = $parcel->getLabelUrl($format);
+
+        if (!$labelUrl) {
+            throw new SendCloudStateException('SendCloud parcel does not have any labels.');
+        }
+
+        try {
+            return (string)($this->guzzleClient->get($labelUrl)->getBody());
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            throw $this->createRequestException('Could not retrieve label.', $exception);
+        }
+    }
+
+    /**
+     * Fetches the sender addresses configured in SendCloud.
+     *
+     * @return SenderAddress[]
+     * @throws SendCloudClientException
+     * @deprecated Endpoint does not seem to work (404).
+     */
+    public function getSenderAddresses(): array
+    {
+        try {
+            $senderAddressesData = json_decode($this->guzzleClient->get('addresses/sender')->getBody())
+                ->sender_addresses;
+
+            return array_map(function (\stdClass $senderAddressData) {
+                return new SenderAddress($senderAddressData);
+            }, $senderAddressesData);
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            throw $this->createRequestException('Could not retrieve sender addresses.', $exception);
+        }
+    }
+
+    /**
+     * @param int $parcelId
+     * @return Parcel
+     * @throws SendCloudClientException
+     */
+    public function getParcel(int $parcelId): Parcel
+    {
+        try {
+            $response = $this->guzzleClient->get('parcels/' . $parcelId);
+            return new Parcel(json_decode($response->getBody())->parcel);
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            throw $this->createRequestException('Could not retrieve parcel.', $exception);
+        }
+    }
+
+    protected function getParcelData(
+        Address $shippingAddress,
+        ?string $orderNumber,
+        $shippingMethod,
+        ?int $weight,
+        bool $requestLabel,
+        $senderAddress
+    ): array {
         $parcelData = [
             'name' => $shippingAddress->getName() ?? '',
             'company_name' => $shippingAddress->getCompanyName() ?? '',
@@ -191,151 +387,26 @@ class Client
             throw new \InvalidArgumentException('senderAddress must be an integer, SenderAddress, Address or null.');
         }
 
-        // Perform the creation
-        try {
-            $response = $this->guzzleClient->post('parcels', [
-                'json' => [
-                    'parcel' => $parcelData
-                ]
-            ]);
+        return $parcelData;
+    }
 
-            return new Parcel(json_decode($response->getBody())->parcel);
-        } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            // Precondition failed
-            if ($exception->getCode() === 412) {
-                throw new SendCloudRequestException(
-                    sprintf(
-                        'SendCloud account is not fully configured yet. (%s).',
-                        json_decode($exception->getResponse()->getBody())->error->message
-                    ),
-                    0,
-                    $exception
-                );
+    /**
+     * @param string $message
+     * @param \GuzzleHttp\Exception\RequestException|null $guzzleException
+     * @return SendCloudRequestException
+     */
+    protected function createRequestException(string $message, ?\GuzzleHttp\Exception\RequestException $guzzleException)
+    {
+        // Add the error provided by SendCloud to the message
+        if ($guzzleException->hasResponse()) {
+            $response = json_decode($guzzleException->getResponse()->getBody());
+
+            if ($response && isset($response->error, $response->error->code, $response->error->message)) {
+                $message .= sprintf(' (%s: %s)', $response->error->code, $response->error->message);
             }
-
-            throw new SendCloudRequestException('Could not create parcel with SendCloud.', 0, $exception);
-        }
-    }
-
-    /**
-     * @param Parcel|int $parcel A parcel or parcel ID.
-     * @return Parcel
-     */
-    public function updateParcel(
-        $parcel,
-        ...
-    ): Parcel {
-        if ($parcel instanceof Parcel) {
-            /** @var Parcel $parcel */
-            $parcel = $parcel->getId();
-        } elseif (!is_int($parcel)) {
-            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
         }
 
-        // TODO: Implement with getParcelData
-    }
 
-    /**
-     * Cancels a parcel.
-     * Returns whether the parcel was successfully cancelled.
-     *
-     * @param $parcel
-     * @return bool
-     * @throws SendCloudRequestException
-     */
-    public function cancelParcel($parcel): bool
-    {
-        if ($parcel instanceof Parcel) {
-            /** @var Parcel $parcel */
-            $parcel = $parcel->getId();
-        } elseif (!is_int($parcel)) {
-            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
-        }
-        /** @var int $parcel */
-
-        try {
-            $status = json_decode($this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcel))->getBody())->status;
-            return ($status === 'cancelled');
-        } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
-
-            if (in_array($statusCode, [400, 410])) {
-                return false;
-            }
-
-            throw new SendCloudRequestException('An error occurred while cancelling the parcel.', 0 , $exception);
-        }
-    }
-
-    /**
-     * Fetches the PDF label for the given parcel;
-     * The parcel must already have a label created.
-     *
-     * @param Parcel|int $parcel
-     * @param int $format `Parcel::LABEL_FORMATS`
-     * @return string PDF data.
-     * @throws SendCloudClientException
-     */
-    public function getLabel($parcel, int $format): string
-    {
-        if (!in_array($format, Parcel::LABEL_FORMATS)) {
-            throw new \InvalidArgumentException('Invalid label format given.');
-        }
-
-        if (is_int($parcel)) {
-            /** @var int $parcel */
-            $parcel = $this->getParcel($parcel);
-        } elseif (!($parcel instanceof Parcel)) {
-            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
-        }
-        /** @var Parcel $parcel */
-
-        $labelUrl = $parcel->getLabelUrl($format);
-
-        if (!$labelUrl) {
-            throw new SendCloudStateException('SendCloud parcel does not have any labels.');
-        }
-
-        try {
-            return (string)($this->guzzleClient->get($labelUrl)->getBody());
-        } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw new SendCloudRequestException('Could not retrieve label.', 0, $exception);
-        }
-    }
-
-    /**
-     * Fetches the sender addresses configured in SendCloud.
-     *
-     * @return SenderAddress[]
-     * @throws SendCloudClientException
-     * @deprecated Endpoint does not seem to work (404).
-     */
-    public function getSenderAddresses(): array
-    {
-        try {
-            $senderAddressesData = json_decode($this->guzzleClient->get('addresses/sender')->getBody())
-                ->sender_addresses;
-
-            return array_map(function (\stdClass $senderAddressData) {
-                return new SenderAddress($senderAddressData);
-            }, $senderAddressesData);
-        } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw new SendCloudRequestException('Could not retrieve sender addresses.', 0, $exception);
-        }
-    }
-
-    /**
-     * @param int $parcelId
-     * @return Parcel
-     * @throws SendCloudClientException
-     */
-    public function getParcel(int $parcelId): Parcel
-    {
-        try {
-            $response = $this->guzzleClient->get('parcels/' . $parcelId);
-            return new Parcel(json_decode($response->getBody())->parcel);
-        } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw new SendCloudRequestException('Could not retrieve parcel.', 0, $exception);
-        }
+        return new SendCloudRequestException($message, 0, $guzzleException);
     }
 }
