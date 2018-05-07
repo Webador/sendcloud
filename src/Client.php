@@ -218,6 +218,56 @@ class Client
     }
 
     /**
+     * @param Parcel|int $parcel A parcel or parcel ID.
+     * @return Parcel
+     */
+    public function updateParcel(
+        $parcel,
+        ...
+    ): Parcel {
+        if ($parcel instanceof Parcel) {
+            /** @var Parcel $parcel */
+            $parcel = $parcel->getId();
+        } elseif (!is_int($parcel)) {
+            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
+        }
+
+        // TODO: Implement with getParcelData
+    }
+
+    /**
+     * Cancels a parcel.
+     * Returns whether the parcel was successfully cancelled.
+     *
+     * @param $parcel
+     * @return bool
+     * @throws SendCloudRequestException
+     */
+    public function cancelParcel($parcel): bool
+    {
+        if ($parcel instanceof Parcel) {
+            /** @var Parcel $parcel */
+            $parcel = $parcel->getId();
+        } elseif (!is_int($parcel)) {
+            throw new \InvalidArgumentException('parcel must be an integer or Parcel.');
+        }
+        /** @var int $parcel */
+
+        try {
+            $status = json_decode($this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcel))->getBody())->status;
+            return ($status === 'cancelled');
+        } catch (\GuzzleHttp\Exception\RequestException $exception) {
+            $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
+
+            if (in_array($statusCode, [400, 410])) {
+                return false;
+            }
+
+            throw new SendCloudRequestException('An error occurred while cancelling the parcel.', 0 , $exception);
+        }
+    }
+
+    /**
      * Fetches the PDF label for the given parcel;
      * The parcel must already have a label created.
      *
