@@ -11,6 +11,7 @@ If you require functionality that is missing please request it through a GitHub 
 
 ```php
 use Villermen\SendCloud;
+use Villermen\SendCloud\Exception\SendCloudRequestException;
 
 $client = new SendCloud\Client('your_public_key', 'your_secret_key');
 
@@ -35,8 +36,8 @@ try {
         new SendCloud\Address('From name', 'From company', 'From street', '234', 'City', '9999ZZ', 'NL', '', '')
     );
 
-    var_dump($parcel->getId());
-} catch (\Villermen\SendCloud\Exception\SendCloudRequestException $exception) {
+    var_dump($parcel);
+} catch (SendCloudRequestException $exception) {
     echo $exception->getMessage();
 }
 ```
