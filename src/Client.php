@@ -115,12 +115,12 @@ class Client
      * @param int|ShippingMethod|null $shippingMethod
      *     Shipping method or shipping method id.
      *     The default set in SendCloud will be used if null.
+     * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
+     * @param bool $requestLabel Whether to create a label with the parcel or just add it in SendCloud.
      * @param int|SenderAddress|Address|null $senderAddress
      *     Address or address id of the sender.
      *     The default set in SendCloud will be used if null.
      *     If `$requestLabel` is false, this will be discarded.
-     * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
-     * @param bool $requestLabel Whether to create a label with the parcel or just add it in SendCloud.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -128,9 +128,9 @@ class Client
         Address $shippingAddress,
         ?string $orderNumber = null,
         $shippingMethod = null,
-        $senderAddress = null,
         ?int $weight = null,
-        bool $requestLabel = true
+        bool $requestLabel = true,
+        $senderAddress = null
     ): Parcel {
         $parcelData = [
             'name' => $shippingAddress->getName() ?? '',
