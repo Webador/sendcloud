@@ -1,5 +1,5 @@
 {
-    "name": "villermen/sendcloud",
+    "name": "jouwweb/sendcloud",
     "description": "Provides a client to interact with the SendCloud API.",
     "type": "library",
     "license": "MIT",
@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Villermen\\SendCloud\\": "src"
+            "JouwWeb\\SendCloud\\": "src"
         }
     }
 }

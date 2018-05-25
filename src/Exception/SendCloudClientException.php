@@ -1,6 +1,6 @@
 <?php
 
-namespace Villermen\SendCloud\Exception;
+namespace JouwWeb\SendCloud\Exception;
 
 abstract class SendCloudClientException extends \Exception
 {

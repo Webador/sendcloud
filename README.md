@@ -10,8 +10,8 @@ If you require functionality that is missing please request it through a GitHub 
 ## Example
 
 ```php
-use Villermen\SendCloud;
-use Villermen\SendCloud\Exception\SendCloudRequestException;
+use JouwWeb\SendCloud;
+use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 
 $client = new SendCloud\Client('your_public_key', 'your_secret_key');
 
@@ -43,4 +43,4 @@ try {
 ```
 
 ## Installation
-`composer require villermen/sendcloud`
+`composer require jouwweb/sendcloud`

@@ -1,10 +1,10 @@
 <?php
 
-namespace Villermen\SendCloud;
+namespace JouwWeb\SendCloud;
 
-use Villermen\SendCloud\Exception\SendCloudClientException;
-use Villermen\SendCloud\Exception\SendCloudRequestException;
-use Villermen\SendCloud\Exception\SendCloudStateException;
+use JouwWeb\SendCloud\Exception\SendCloudClientException;
+use JouwWeb\SendCloud\Exception\SendCloudRequestException;
+use JouwWeb\SendCloud\Exception\SendCloudStateException;
 
 /**
  * Client to perform calls on the SendCloud API.

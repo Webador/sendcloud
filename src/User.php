@@ -1,6 +1,6 @@
 <?php
 
-namespace Villermen\SendCloud;
+namespace JouwWeb\SendCloud;
 
 class User
 {
