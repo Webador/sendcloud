@@ -3,6 +3,7 @@
 namespace JouwWeb\SendCloud;
 
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
+use JouwWeb\SendCloud\Exception\SendCloudConfigurationException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Exception\SendCloudStateException;
 
@@ -109,7 +110,7 @@ class Client
      * @param null|string $orderNumber
      * @param int|ShippingMethod|null $shippingMethod
      *     Shipping method or shipping method id.
-     *     The default set in SendCloud will be used if null.
+     *     Required when requesting a label.
      * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
      * @param bool $requestLabel Whether to create a label with the parcel or just add it in SendCloud.
      * @param int|SenderAddress|Address|null $senderAddress
@@ -118,6 +119,7 @@ class Client
      *     If `$requestLabel` is false, this will be discarded.
      * @return Parcel
      * @throws SendCloudRequestException
+     * @throws SendCloudConfigurationException
      */
     public function createParcel(
         Address $shippingAddress,
@@ -147,12 +149,18 @@ class Client
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
             // Precondition failed
             if ($exception->getCode() === 412) {
-                throw new SendCloudRequestException(
-                    sprintf(
-                        'SendCloud account is not fully configured yet. (%s).',
-                        json_decode($exception->getResponse()->getBody())->error->message
-                    ),
-                    0,
+                $message = json_decode($exception->getResponse()->getBody())->error->message;
+
+                $code = SendCloudConfigurationException::CODE_UNKNOWN;
+                if (stripos($message, 'no address data') !== false) {
+                    $code = SendCloudConfigurationException::CODE_NO_ADDRESS_DATA;
+                } elseif (stripos($message, 'not allowed to announce') !== false) {
+                    $code = SendCloudConfigurationException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
+                }
+
+                throw new SendCloudConfigurationException(
+                    sprintf('SendCloud account is not fully configured yet. (%s).', $message),
+                    $code,
                     $exception
                 );
             }
