@@ -3,7 +3,6 @@
 namespace JouwWeb\SendCloud;
 
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
-use JouwWeb\SendCloud\Exception\SendCloudConfigurationException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Exception\SendCloudStateException;
 
@@ -65,7 +64,11 @@ class Client
         try {
             return new User(json_decode($this->guzzleClient->get('user')->getBody())->user);
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException('An error occurred while fetching the SendCloud user.', $exception);
+            throw new SendCloudRequestException(
+                'An error occurred while fetching the SendCloud user.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -96,8 +99,9 @@ class Client
 
             return $shippingMethods;
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException(
+            throw new SendCloudRequestException(
                 'An error occurred while fetching shipping methods from the SendCloud API.',
+                SendCloudRequestException::CODE_UNKNOWN,
                 $exception
             );
         }
@@ -119,7 +123,6 @@ class Client
      *     If `$requestLabel` is false, this will be discarded.
      * @return Parcel
      * @throws SendCloudRequestException
-     * @throws SendCloudConfigurationException
      */
     public function createParcel(
         Address $shippingAddress,
@@ -147,25 +150,22 @@ class Client
 
             return new Parcel(json_decode($response->getBody())->parcel);
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            // Precondition failed
+            $message = 'Could not create parcel with SendCloud.';
+            $code = SendCloudRequestException::CODE_UNKNOWN;
+
+            // Precondition failed, parse response message to determine code of exception
             if ($exception->getCode() === 412) {
-                $message = json_decode($exception->getResponse()->getBody())->error->message;
+                $message = 'SendCloud account is not fully configured yet.';
 
-                $code = SendCloudConfigurationException::CODE_UNKNOWN;
-                if (stripos($message, 'no address data') !== false) {
-                    $code = SendCloudConfigurationException::CODE_NO_ADDRESS_DATA;
-                } elseif (stripos($message, 'not allowed to announce') !== false) {
-                    $code = SendCloudConfigurationException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
+                $responseMessage = json_decode($exception->getResponse()->getBody())->error->message;
+                if (stripos($responseMessage, 'no address data') !== false) {
+                    $code = SendCloudRequestException::CODE_NO_ADDRESS_DATA;
+                } elseif (stripos($responseMessage, 'not allowed to announce') !== false) {
+                    $code = SendCloudRequestException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
                 }
-
-                throw new SendCloudConfigurationException(
-                    sprintf('SendCloud account is not fully configured yet. (%s).', $message),
-                    $code,
-                    $exception
-                );
             }
 
-            throw $this->createRequestException('Could not create parcel with SendCloud.', $exception);
+            throw new SendCloudRequestException($message, $code, $exception);
         }
     }
 
@@ -220,7 +220,11 @@ class Client
 
             return new Parcel(json_decode($response->getBody()));
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException('Could not update parcel with SendCloud.', $exception);
+            throw new SendCloudRequestException(
+                'Could not update parcel with SendCloud.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -252,7 +256,11 @@ class Client
                 return false;
             }
 
-            throw $this->createRequestException('An error occurred while cancelling the parcel.', $exception);
+            throw new SendCloudRequestException(
+                'An error occurred while cancelling the parcel.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -288,7 +296,11 @@ class Client
         try {
             return (string)($this->guzzleClient->get($labelUrl)->getBody());
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException('Could not retrieve label.', $exception);
+            throw new SendCloudRequestException(
+                'Could not retrieve label.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -309,7 +321,11 @@ class Client
                 return new SenderAddress($senderAddressData);
             }, $senderAddressesData);
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException('Could not retrieve sender addresses.', $exception);
+            throw new SendCloudRequestException(
+                'Could not retrieve sender addresses.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -324,7 +340,11 @@ class Client
             $response = $this->guzzleClient->get('parcels/' . $parcelId);
             return new Parcel(json_decode($response->getBody())->parcel);
         } catch (\GuzzleHttp\Exception\RequestException $exception) {
-            throw $this->createRequestException('Could not retrieve parcel.', $exception);
+            throw new SendCloudRequestException(
+                'Could not retrieve parcel.',
+                SendCloudRequestException::CODE_UNKNOWN,
+                $exception
+            );
         }
     }
 
@@ -396,25 +416,5 @@ class Client
         }
 
         return $parcelData;
-    }
-
-    /**
-     * @param string $message
-     * @param \GuzzleHttp\Exception\RequestException|null $guzzleException
-     * @return SendCloudRequestException
-     */
-    protected function createRequestException(string $message, ?\GuzzleHttp\Exception\RequestException $guzzleException)
-    {
-        // Add the error provided by SendCloud to the message
-        if ($guzzleException->hasResponse()) {
-            $response = json_decode($guzzleException->getResponse()->getBody());
-
-            if ($response && isset($response->error, $response->error->code, $response->error->message)) {
-                $message .= sprintf(' (%s: %s)', $response->error->code, $response->error->message);
-            }
-        }
-
-
-        return new SendCloudRequestException($message, 0, $guzzleException);
     }
 }
