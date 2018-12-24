@@ -121,6 +121,7 @@ class Client
      *     Address or address id of the sender.
      *     The default set in SendCloud will be used if null.
      *     If `$requestLabel` is false, this will be discarded.
+     * @param string|null $servicePointId
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -130,7 +131,8 @@ class Client
         $shippingMethod = null,
         ?int $weight = null,
         bool $requestLabel = true,
-        $senderAddress = null
+        $senderAddress = null,
+        ?string $servicePointId = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             $shippingAddress,
@@ -138,7 +140,8 @@ class Client
             $shippingMethod,
             $weight,
             $requestLabel,
-            $senderAddress
+            $senderAddress,
+            $servicePointId
         );
 
         try {
@@ -180,6 +183,7 @@ class Client
      * @param int|null $weight
      * @param bool $requestLabel
      * @param SenderAddress|null $senderAddress
+     * @param string|null $servicePointId
      * @return Parcel
      * @throws SendCloudRequestException
      * @see createParcel()
@@ -191,7 +195,8 @@ class Client
         $shippingMethod = null,
         ?int $weight = null,
         bool $requestLabel = true,
-        $senderAddress = null
+        $senderAddress = null,
+        ?string $servicePointId = null
     ): Parcel {
         if ($parcel instanceof Parcel) {
             /** @var Parcel $parcel */
@@ -206,7 +211,8 @@ class Client
             $shippingMethod,
             $weight,
             $requestLabel,
-            $senderAddress
+            $senderAddress,
+            $servicePointId
         );
 
         $parcelData['id'] = $parcel;
@@ -354,7 +360,8 @@ class Client
         $shippingMethod,
         ?int $weight,
         bool $requestLabel,
-        $senderAddress
+        $senderAddress,
+        ?string $servicePointId
     ): array {
         $parcelData = [
             'name' => $shippingAddress->getName() ?? '',
@@ -366,10 +373,9 @@ class Client
             'country' => $shippingAddress->getCountryCode() ?? '',
             'email' => $shippingAddress->getEmailAddress() ?? '',
             'telephone' => $shippingAddress->getPhoneNumber() ?? '',
-
             'order_number' => $orderNumber ?? '',
-
             'request_label' => $requestLabel,
+            'to_service_point' => $servicePointId,
         ];
 
         if ($weight) {

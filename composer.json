@@ -10,12 +10,16 @@
         }
     ],
     "require": {
-        "php": ">=7.1",
-        "guzzlehttp/guzzle": "^6.3"
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^6.3",
+        "php": ">=7.1"
     },
     "autoload": {
         "psr-4": {
             "JouwWeb\\SendCloud\\": "src"
         }
+    },
+    "config": {
+        "sort-packages": true
     }
 }
