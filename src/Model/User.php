@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class User
 {
@@ -37,7 +37,7 @@ class User
         $this->postalCode = (string)$data->postal_code;
         $this->city = (string)$data->city;
         $this->email = (string)$data->email;
-        $this->registered = new \DateTime((string)$data->registered);
+        $this->registered = new \DateTimeImmutable((string)$data->registered);
     }
 
     public function getUsername(): string
@@ -75,7 +75,7 @@ class User
         return $this->email;
     }
 
-    public function getRegistered(): \DateTime
+    public function getRegistered(): \DateTimeImmutable
     {
         return $this->registered;
     }

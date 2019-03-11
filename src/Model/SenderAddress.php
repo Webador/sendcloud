@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class SenderAddress
 {
@@ -37,19 +37,19 @@ class SenderAddress
     /** @var string */
     protected $country;
 
-    public function __construct(\stdClass $data)
+    public function __construct(array $data)
     {
-        $this->id = (int)$data->id;
-        $this->companyName = (string)$data->company_name;
-        $this->contactName = (string)$data->contact_name;
-        $this->email = (string)$data->email;
-        $this->telephone = (string)$data->telephone;
-        $this->street = (string)$data->street;
-        $this->houseNumber = (string)$data->house_number;
-        $this->postalBox = (string)$data->postal_box;
-        $this->postalCode = (string)$data->postal_code;
-        $this->city = (string)$data->city;
-        $this->country = (string)$data->country;
+        $this->id = (int)$data['id'];
+        $this->companyName = (string)$data['company_name'];
+        $this->contactName = (string)$data['contact_name'];
+        $this->email = (string)$data['email'];
+        $this->telephone = (string)$data['telephone'];
+        $this->street = (string)$data['street'];
+        $this->houseNumber = (string)$data['house_number'];
+        $this->postalBox = (string)$data['postal_box'];
+        $this->postalCode = (string)$data['postal_code'];
+        $this->city = (string)$data['city'];
+        $this->country = (string)$data['country'];
     }
 
     public function getId(): int

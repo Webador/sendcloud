@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class ShippingMethod
 {

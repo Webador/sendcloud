@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class Address
 {
@@ -33,24 +33,24 @@ class Address
 
     public function __construct(
         string $name,
-        string $companyName,
+        ?string $companyName,
         string $street,
         string $houseNumber,
         string $city,
         string $postalCode,
         string $countryCode,
         string $emailAddress,
-        string $phoneNumber
+        ?string $phoneNumber
     ) {
         $this->name = $name;
-        $this->companyName = $companyName;
+        $this->companyName = $companyName ?? '';
         $this->street = $street;
         $this->houseNumber = $houseNumber;
         $this->city = $city;
         $this->postalCode = $postalCode;
         $this->countryCode = $countryCode;
         $this->emailAddress = $emailAddress;
-        $this->phoneNumber = $phoneNumber;
+        $this->phoneNumber = $phoneNumber ?? '';
     }
 
     public function getName(): string
