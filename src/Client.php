@@ -129,7 +129,16 @@ class Client
         ?string $orderNumber = null,
         ?int $weight = null
     ): Parcel {
-        $parcelData = $this->getParcelData(null, $shippingAddress, $servicePointId, $orderNumber, $weight, false, null, null);
+        $parcelData = $this->getParcelData(
+            null,
+            $shippingAddress,
+            $servicePointId,
+            $orderNumber,
+            $weight,
+            false,
+            null,
+            null
+        );
 
         try {
             $response = $this->guzzleClient->post('parcels', [
@@ -147,14 +156,23 @@ class Client
     /**
      * Update details of an existing parcel.
      *
-     * @param int $parcelId An existing parcel's ID.
+     * @param Parcel|int $parcel
      * @param Address $shippingAddress
      * @return Parcel
      * @throws SendCloudRequestException
      */
-    public function updateParcel(int $parcelId, Address $shippingAddress): Parcel
+    public function updateParcel($parcel, Address $shippingAddress): Parcel
     {
-        $parcelData = $this->getParcelData($parcelId, $shippingAddress, null, null, null, false, null, null);
+        $parcelData = $this->getParcelData(
+            $this->parseParcelArgument($parcel),
+            $shippingAddress,
+            null,
+            null,
+            null,
+            false,
+            null,
+            null
+        );
 
         try {
             $response = $this->guzzleClient->put('parcels', [
@@ -169,17 +187,27 @@ class Client
         }
     }
 
-    public function createLabel(int $parcelId, int $shippingMethodId, $senderAddressIdOrAddress): Parcel
+    /**
+     * Request a label for an existing parcel.
+     *
+     * @param Parcel|int $parcel
+     * @param int $shippingMethodId
+     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * use undocumented behavior that will disable branding personalizations.
+     * @return Parcel
+     * @throws SendCloudRequestException
+     */
+    public function createLabel($parcel, int $shippingMethodId, $senderAddress): Parcel
     {
         $parcelData = $this->getParcelData(
-            $parcelId,
+            $this->parseParcelArgument($parcel),
             null,
             null,
             null,
             null,
             true,
             $shippingMethodId,
-            $senderAddressIdOrAddress
+            $senderAddress
         );
 
         try {
@@ -196,16 +224,16 @@ class Client
     }
 
     /**
-     * Cancels a parcel. Returns whether the parcel was successfully cancelled.
+     * Cancels or deletes a parcel (depending on status). Returns whether the parcel was successfully cancelled.
      *
-     * @param int $parcelId
+     * @param Parcel|int $parcel
      * @return bool
      * @throws SendCloudRequestException
      */
-    public function cancelParcel(int $parcelId): bool
+    public function cancelParcel($parcel): bool
     {
         try {
-            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcelId));
+            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $this->parseParcelArgument($parcel)));
             return true;
         } catch (RequestException $exception) {
             $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
@@ -222,24 +250,22 @@ class Client
     /**
      * Fetches the PDF label for the given parcel, The parcel must already have a label created.
      *
-     * @param Parcel|int $parcelOrParcelId
+     * @param Parcel|int $parcel
      * @param int $format `Parcel::LABEL_FORMATS`
      * @return string PDF data.
      * @throws SendCloudClientException
      * @throws SendCloudRequestException
      * @throws SendCloudStateException
      */
-    public function getLabelPdf($parcelOrParcelId, int $format): string
+    public function getLabelPdf($parcel, int $format): string
     {
         if (!in_array($format, Parcel::LABEL_FORMATS)) {
             throw new \InvalidArgumentException('Invalid label format given.');
         }
 
-        if (is_int($parcelOrParcelId)) {
-            $parcel = $this->getParcel($parcelOrParcelId);
-        } elseif ($parcelOrParcelId instanceof Parcel) {
-            $parcel = $parcelOrParcelId;
-        } else {
+        if (is_int($parcel)) {
+            $parcel = $this->getParcel($parcel);
+        } elseif (!($parcel instanceof Parcel)) {
             throw new \InvalidArgumentException('parcel must be an integer or a Parcel.');
         }
 
@@ -277,14 +303,16 @@ class Client
     }
 
     /**
-     * @param int $parcelId
+     * Retrieves current parcel data from SendCloud.
+     *
+     * @param Parcel|int $parcel
      * @return Parcel
      * @throws SendCloudClientException
      */
-    public function getParcel(int $parcelId): Parcel
+    public function getParcel($parcel): Parcel
     {
         try {
-            $response = $this->guzzleClient->get('parcels/' . $parcelId);
+            $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
             return new Parcel(json_decode($response->getBody()->getContents(), true)['parcel']);
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not retrieve parcel.');
@@ -301,7 +329,8 @@ class Client
      * @param int|null $weight
      * @param bool $requestLabel
      * @param int|null $shippingMethodId Required if requesting a label.
-     * @param int|Address $senderAddressIdOrAddress Passing null will pick SendCloud's default
+     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * use undocumented behavior that will disable branding personalizations.
      * @return mixed[]
      */
     protected function getParcelData(
@@ -312,7 +341,7 @@ class Client
         ?int $weight,
         bool $requestLabel,
         ?int $shippingMethodId,
-        $senderAddressIdOrAddress
+        $senderAddress
     ): array {
         $parcelData = [];
 
@@ -354,24 +383,27 @@ class Client
         $parcelData['request_label'] = true;
 
         // Sender address
-        if (is_int($senderAddressIdOrAddress)) {
-            /** @var int $senderAddressIdOrAddress */
-            $parcelData['sender_address'] = $senderAddressIdOrAddress;
-        } elseif ($senderAddressIdOrAddress instanceof Address) {
-            /** @var Address $senderAddressIdOrAddress */
+        if ($senderAddress instanceof SenderAddress) {
+            $senderAddress = $senderAddress->getId();
+        }
+        if (is_int($senderAddress)) {
+            /** @var int $senderAddress */
+            $parcelData['sender_address'] = $senderAddress;
+        } elseif ($senderAddress instanceof Address) {
+            /** @var Address $senderAddress */
             $parcelData = array_merge($parcelData, [
-                'from_name' => $senderAddressIdOrAddress->getName(),
-                'from_company_name' => $senderAddressIdOrAddress->getCompanyName(),
-                'from_address_1' => $senderAddressIdOrAddress->getStreet(),
+                'from_name' => $senderAddress->getName(),
+                'from_company_name' => $senderAddress->getCompanyName(),
+                'from_address_1' => $senderAddress->getStreet(),
                 'from_address_2' => '',
-                'from_house_number' => $senderAddressIdOrAddress->getHouseNumber(),
-                'from_city' => $senderAddressIdOrAddress->getCity(),
-                'from_postal_code' => $senderAddressIdOrAddress->getPostalCode(),
-                'from_country' => $senderAddressIdOrAddress->getCountryCode(),
-                'from_telephone' => $senderAddressIdOrAddress->getPhoneNumber(),
-                'from_email' => $senderAddressIdOrAddress->getEmailAddress(),
+                'from_house_number' => $senderAddress->getHouseNumber(),
+                'from_city' => $senderAddress->getCity(),
+                'from_postal_code' => $senderAddress->getPostalCode(),
+                'from_country' => $senderAddress->getCountryCode(),
+                'from_telephone' => $senderAddress->getPhoneNumber(),
+                'from_email' => $senderAddress->getEmailAddress(),
             ]);
-        } elseif ($senderAddressIdOrAddress !== null) {
+        } elseif ($senderAddress !== null) {
             throw new \InvalidArgumentException(
                 '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
             );
@@ -411,5 +443,22 @@ class Client
         }
 
         return new SendCloudRequestException($message, $code, $exception);
+    }
+
+    /**
+     * @param Parcel|int $parcel
+     * @return int
+     */
+    protected function parseParcelArgument($parcel): int
+    {
+        if (is_int($parcel)) {
+            return $parcel;
+        }
+
+        if ($parcel instanceof Parcel) {
+            return $parcel->getId();
+        }
+
+        throw new \InvalidArgumentException('Parcel argument must be a parcel or parcel ID.');
     }
 }
