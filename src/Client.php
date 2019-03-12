@@ -430,11 +430,14 @@ class Client
         $message = $defaultMessage;
         $code = SendCloudRequestException::CODE_UNKNOWN;
 
+        $responseData = json_decode((string)$exception->getResponse()->getBody(), true);
+        $responseCode = $responseData['error']['code'] ?? null;
+        $responseMessage = $responseData['error']['message'] ?? null;
+
         // Precondition failed, parse response message to determine code of exception
         if ($exception->getCode() === 412) {
             $message = 'SendCloud account is not fully configured yet.';
 
-            $responseMessage = json_decode((string)$exception->getResponse()->getBody(), true)['error']['message'];
             if (stripos($responseMessage, 'no address data') !== false) {
                 $code = SendCloudRequestException::CODE_NO_ADDRESS_DATA;
             } elseif (stripos($responseMessage, 'not allowed to announce') !== false) {
@@ -442,7 +445,12 @@ class Client
             }
         }
 
-        return new SendCloudRequestException($message, $code, $exception);
+        // Add response message to exception message for uknown errors
+        if ($code !== SendCloudRequestException::CODE_UNKNOWN && $responseMessage) {
+            $message .= sprintf(' (%s: %s)', $responseCode, $responseMessage);
+        }
+
+        return new SendCloudRequestException($message, $code, $exception, $responseCode, $responseMessage);
     }
 
     /**
