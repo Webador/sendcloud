@@ -9,9 +9,13 @@ jobs:
                 keys:
                     # No targeted cache as libraries contain no Composer lock file
                     - deps-v1-
-            - run: composer install --no-interaction --no-progress
+            - run:
+                name: Install dependencies
+                command: composer install --no-interaction --no-progress
             - save_cache:
                 key: deps-v1-
                 paths:
                     - vendor
-            - run: vendor/bin/phpunit
+            - run:
+                name: Run unit tests
+                command: vendor/bin/phpunit

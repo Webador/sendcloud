@@ -68,7 +68,7 @@ class Client
     public function getUser(): User
     {
         try {
-            return new User(json_decode($this->guzzleClient->get('user')->getBody()->getContents(), true)['user']);
+            return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
         } catch (RequestException $exception) {
             throw new SendCloudRequestException(
                 'An error occurred while fetching the SendCloud user.',
@@ -88,7 +88,7 @@ class Client
     {
         try {
             $response = $this->guzzleClient->get('shipping_methods');
-            $shippingMethodsData = json_decode($response->getBody()->getContents(), true)['shipping_methods'];
+            $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
             $shippingMethods = array_map(function (array $shippingMethodData) {
                 return new ShippingMethod($shippingMethodData);
@@ -147,7 +147,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode($response->getBody()->getContents(), true)['parcel']);
+            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not create parcel in SendCloud.');
         }
@@ -181,7 +181,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode($response->getBody()->getContents(), true)['parcel']);
+            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not update parcel in SendCloud.');
         }
@@ -217,7 +217,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode($response->getBody()->getContents(), true)['parcel']);
+            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not create parcel with SendCloud.');
         }
@@ -276,7 +276,7 @@ class Client
         }
 
         try {
-            return $this->guzzleClient->get($labelUrl)->getBody()->getContents();
+            return (string)$this->guzzleClient->get($labelUrl)->getBody();
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not retrieve label.');
         }
@@ -292,7 +292,7 @@ class Client
     {
         try {
             $response = $this->guzzleClient->get('user/addresses/sender');
-            $senderAddressesData = json_decode($response->getBody()->getContents(), true)['sender_addresses'];
+            $senderAddressesData = json_decode((string)$response->getBody(), true)['sender_addresses'];
 
             return array_map(function (array $senderAddressData) {
                 return new SenderAddress($senderAddressData);
@@ -313,7 +313,7 @@ class Client
     {
         try {
             $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
-            return new Parcel(json_decode($response->getBody()->getContents(), true)['parcel']);
+            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
             throw $this->marshalRequestException($exception, 'Could not retrieve parcel.');
         }
@@ -434,7 +434,7 @@ class Client
         if ($exception->getCode() === 412) {
             $message = 'SendCloud account is not fully configured yet.';
 
-            $responseMessage = json_decode($exception->getResponse()->getBody()->getContents(), true)['error']['message'];
+            $responseMessage = json_decode((string)$exception->getResponse()->getBody(), true)['error']['message'];
             if (stripos($responseMessage, 'no address data') !== false) {
                 $code = SendCloudRequestException::CODE_NO_ADDRESS_DATA;
             } elseif (stripos($responseMessage, 'not allowed to announce') !== false) {
