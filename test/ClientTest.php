@@ -2,6 +2,8 @@
 
 namespace Test\JouwWeb\SendCloud;
 
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use JouwWeb\SendCloud\Client;
 use JouwWeb\SendCloud\Model\Address;
@@ -71,12 +73,28 @@ class ClientTest extends TestCase
         $this->assertEquals(null, $shippingMethods[0]->getPriceForCountry('EN'));
     }
 
+    public function testGetSenderAddresses(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"sender_addresses":[{"id":92837,"company_name":"AwesomeCo Inc.","contact_name":"Bertus Bernardus","email":"bertus@awesomeco.be","telephone":"+31683749586","street":"Wegstraat","house_number":"233","postal_box":"","postal_code":"8398","city":"Brussel","country":"BE"},{"id":28397,"company_name":"AwesomeCo Inc. NL","contact_name":"","email":"","telephone":"0645000000","street":"Torenallee","house_number":"20","postal_box":"","postal_code":"5617 BC","city":"Eindhoven","country":"NL"}]}'
+        ));
+
+        $senderAddresses = $this->client->getSenderAddresses();
+
+        $this->assertCount(2, $senderAddresses);
+        $this->assertEquals(92837, $senderAddresses[0]->getId());
+        $this->assertEquals('AwesomeCo Inc.', $senderAddresses[0]->getCompanyName());
+        $this->assertEquals('', $senderAddresses[1]->getContactName());
+    }
+
     public function testCreateParcel(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.490","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"20250533","external_shipment_id":"201900001"}}'
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
         ));
 
         $parcel = $this->client->createParcel(
@@ -92,10 +110,95 @@ class ClientTest extends TestCase
         $this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
         $this->assertEquals('', $parcel->getAddress()->getCompanyName());
         $this->assertEquals(null, $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
+        $this->assertEquals(2486, $parcel->getWeight());
     }
 
     public function testUpdateParcel(): void
     {
-        $this->markTestIncomplete();
+        // Test that update only updates the address details (and not e.g., order number/weight)
+        $this->guzzleClientMock->expects($this->once())->method('request')
+            ->willReturnCallback(function () {
+                $this->assertEquals([
+                    'put',
+                    'parcels',
+                    [
+                        'json' => [
+                            'parcel' => [
+                                'id' => 8293794,
+                                'name' => 'Completely different person',
+                                'company_name' => 'Some company',
+                                'address' => 'Rosebud',
+                                'house_number' => '2134A',
+                                'city' => 'Almanda',
+                                'postal_code' => '9238DD',
+                                'country' => 'NL',
+                                'email' => 'completelydifferent@email.com',
+                                'telephone' => '+31699999999',
+                            ],
+                        ],
+                    ],
+                ], func_get_args());
+
+                return new Response(
+                    200,
+                    [],
+                    '{"parcel":{"id":8293794,"address":"Rosebud 2134A","address_2":"","address_divided":{"street":"Rosebud","house_number":"2134"},"city":"Almanda","company_name":"Some company","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"completelydifferent@email.com","name":"Completely different person","postal_code":"9238DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"+31699999999","tracking_number":"","weight":"2.490","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
+                );
+            });
+
+        $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', '2134A', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '+31699999999'));
+
+        $this->assertEquals('Some company', $parcel->getAddress()->getCompanyName());
+    }
+
+    public function testCreateLabel(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcel":{"id":8293794,"address":"Rosebud 2134A","address_2":"","address_divided":{"street":"Rosebud","house_number":"2134"},"city":"Almanda","company_name":"Some company","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"completelydifferent@email.com","name":"Completely different person","postal_code":"9238 DD","reference":"0","shipment":{"id":117,"name":"DHLForYou Drop Off"},"status":{"id":1000,"message":"Ready to send"},"to_service_point":null,"telephone":"+31699999999","tracking_number":"JVGL4004421100020097","weight":"2.490","label":{"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794","normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3"]},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":"parcel","shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":117,"external_order_id":"8293794","external_shipment_id":"201900001","carrier":{"code":"dhl"},"tracking_url":"https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd"}}'
+        ));
+
+        $parcel = $this->client->createLabel(8293794, 117, 61361);
+
+        $this->assertEquals(Parcel::STATUS_READY_TO_SEND, $parcel->getStatusId());
+        $this->assertEquals('JVGL4004421100020097', $parcel->getTrackingNumber());
+        $this->assertEquals('https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd', $parcel->getTrackingUrl());
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT));
+    }
+
+    public function testGetParcel(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcel":{"id":2784972,"address":"Teststraat 12 A10","address_2":"","address_divided":{"street":"Teststraat","house_number":"12"},"city":"Woonplaats","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"27-08-2018 11:32:04","email":"sjoerd@jouwweb.nl","name":"Sjoerd Nuijten","postal_code":"7777 AA","reference":"0","shipment":{"id":8,"name":"Unstamped letter"},"status":{"id":11,"message":"Delivered"},"to_service_point":null,"telephone":"","tracking_number":"3SYZXG192833973","weight":"1.000","label":{"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer/13846453","normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=3"]},"customs_declaration":{},"order_number":"201806006","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":"parcel","shipment_uuid":"cb1e0f2d-4e7f-456b-91fe-0bcf09847d10","shipping_method":39,"external_order_id":"2784972","external_shipment_id":"201806006","carrier":{"code":"postnl"},"tracking_url":"https://tracking.sendcloud.sc/forward?carrier=postnl&code=3SYZXG192833973&destination=NL&lang=nl&source=NL&type=parcel&verification=7777AA"}}'
+        ));
+
+        $parcel = $this->client->getParcel(2784972);
+
+        $this->assertEquals(2784972, $parcel->getId());
+        $this->assertEquals(Parcel::STATUS_DELIVERED, $parcel->getStatusId());
+    }
+
+    public function testCancelParcel(): void
+    {
+        $this->guzzleClientMock->expects($this->exactly(2))->method('request')->willReturnCallback(function ($method, $url) {
+            $parcelId = (int)explode('/', $url)[1];
+
+            if ($parcelId === 8293794) {
+                return new Response(200, [], '{"status":"deleted","message":"Parcel has been deleted"}');
+            }
+
+            throw new RequestException(
+                'Client error: ...',
+                new Request('POST', 'url'),
+                new Response(400, [], '{"status":"failed","message":"Shipped parcels, or parcels being shipped, can no longer be cancelled."}')
+            );
+        });
+
+        $this->assertTrue($this->client->cancelParcel(8293794));
+        $this->assertFalse($this->client->cancelParcel(2784972));
     }
 }

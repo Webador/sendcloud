@@ -28,16 +28,16 @@ class User
     /** @var \DateTime */
     protected $registered;
 
-    public function __construct(\stdClass $data)
+    public function __construct(array $data)
     {
-        $this->username = (string)$data->username;
-        $this->companyName = (string)$data->company_name;
-        $this->telephone = (string)$data->telephone;
-        $this->address = (string)$data->address;
-        $this->postalCode = (string)$data->postal_code;
-        $this->city = (string)$data->city;
-        $this->email = (string)$data->email;
-        $this->registered = new \DateTimeImmutable((string)$data->registered);
+        $this->username = (string)$data['username'];
+        $this->companyName = (string)$data['company_name'];
+        $this->telephone = (string)$data['telephone'];
+        $this->address = (string)$data['address'];
+        $this->postalCode = (string)$data['postal_code'];
+        $this->city = (string)$data['city'];
+        $this->email = (string)$data['email'];
+        $this->registered = new \DateTimeImmutable((string)$data['registered']);
     }
 
     public function getUsername(): string

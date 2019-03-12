@@ -68,7 +68,7 @@ class Client
     public function getUser(): User
     {
         try {
-            return new User(json_decode($this->guzzleClient->get('user')->getBody()->getContents())->user);
+            return new User(json_decode($this->guzzleClient->get('user')->getBody()->getContents(), true)['user']);
         } catch (RequestException $exception) {
             throw new SendCloudRequestException(
                 'An error occurred while fetching the SendCloud user.',
@@ -87,10 +87,10 @@ class Client
     public function getShippingMethods(): array
     {
         try {
-            $shippingMethodsData = json_decode($this->guzzleClient->get('shipping_methods')->getBody()->getContents())
-                ->shipping_methods;
+            $response = $this->guzzleClient->get('shipping_methods');
+            $shippingMethodsData = json_decode($response->getBody()->getContents(), true)['shipping_methods'];
 
-            $shippingMethods = array_map(function (\stdClass $shippingMethodData) {
+            $shippingMethods = array_map(function (array $shippingMethodData) {
                 return new ShippingMethod($shippingMethodData);
             }, $shippingMethodsData);
 
@@ -205,9 +205,8 @@ class Client
     public function cancelParcel(int $parcelId): bool
     {
         try {
-            $response = $this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcelId));
-            $status = json_decode($response->getBody()->getContents(), true)['status'];
-            return ($status === 'cancelled');
+            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcelId));
+            return true;
         } catch (RequestException $exception) {
             $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
 
@@ -266,7 +265,7 @@ class Client
     public function getSenderAddresses(): array
     {
         try {
-            $response = $this->guzzleClient->get('addresses/sender');
+            $response = $this->guzzleClient->get('user/addresses/sender');
             $senderAddressesData = json_decode($response->getBody()->getContents(), true)['sender_addresses'];
 
             return array_map(function (array $senderAddressData) {
@@ -344,7 +343,6 @@ class Client
         }
 
         if ($weight) {
-            // TODO: Why did I do this? $parcelData['weight'] = ceil($weight / 10) / 100;
             $parcelData['weight'] = ceil($weight / 1000);
         }
 

@@ -178,4 +178,9 @@ class Parcel
     {
         return $this->address;
     }
+
+    public function getWeight(): int
+    {
+        return $this->weight;
+    }
 }
