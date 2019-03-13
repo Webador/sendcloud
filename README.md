@@ -12,6 +12,7 @@ please request it through a GitHub issue or pull request.
 use JouwWeb\SendCloud\Client;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
+use JouwWeb\SendCloud\Model\WebhookEvent;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 
 $client = new Client('your_public_key', 'your_secret_key');
@@ -45,6 +46,12 @@ try {
     var_dump($parcel, $pdf);
 } catch (SendCloudRequestException $exception) {
     echo $exception->getMessage();
+}
+
+// Verify and parse a webhook request
+$webhookEvent = $client->parseWebhookRequest($request);
+if ($webhookEvent->getType() === WebhookEvent::TYPE_PARCEL_STATUS_CHANGED) {
+    $parcel = $webhookEvent->getParcel();
 }
 ```
 
