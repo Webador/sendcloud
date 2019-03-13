@@ -6,6 +6,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use JouwWeb\SendCloud\Client;
+use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -200,5 +201,23 @@ class ClientTest extends TestCase
 
         $this->assertTrue($this->client->cancelParcel(8293794));
         $this->assertFalse($this->client->cancelParcel(2784972));
+    }
+
+    public function testParseRequestException(): void
+    {
+        $this->guzzleClientMock->method('request')->willThrowException(new RequestException(
+            "Client error: `GET https://panel.sendcloud.sc/api/v2/user` resulted in a `401 Unauthorized` response:\n{\"error\":{\"message\":\"Invalid username/password.\",\"request\":\"api/v2/user\",\"code\":401}}\n))",
+            new Request('GET', 'https://some.uri'),
+            new Response(401, [], '{"error":{"message":"Invalid username/password.","request":"api/v2/user","code":401}}')
+        ));
+
+        try {
+            $this->client->getUser();
+            $this->fail('getUser completed successfully while a SendCloudRequestException was expected.');
+        } catch (SendCloudRequestException $exception) {
+            $this->assertEquals(SendCloudRequestException::CODE_UNAUTHORIZED, $exception->getCode());
+            $this->assertEquals(401, $exception->getSendCloudCode());
+            $this->assertEquals('Invalid username/password.', $exception->getSendCloudMessage());
+        }
     }
 }
