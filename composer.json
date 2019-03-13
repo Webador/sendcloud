@@ -1,6 +1,14 @@
 {
     "name": "jouwweb/sendcloud",
-    "description": "Provides a client to interact with the SendCloud API.",
+    "description": "Provides a client to interact with the SendCloud API in an object-oriented way.",
+    "keywords": [
+        "sendcloud",
+        "client",
+        "api",
+        "jouwweb",
+        "parcel",
+        "webhook"
+    ],
     "type": "library",
     "license": "MIT",
     "authors": [
