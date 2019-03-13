@@ -47,7 +47,7 @@ class WebhookEvent
 
         $this->payload = array_diff_key($data, array_flip(['action', 'timestamp']));
 
-        if ($this->payload['parcel']) {
+        if (isset($this->payload['parcel'])) {
             $this->parcel = new Parcel($this->payload['parcel']);
         }
     }
