@@ -28,7 +28,16 @@ class Utility
             self::verifyWebhookRequest($request, $secretKey);
         }
 
-        return new WebhookEvent(json_decode((string)$request->getBody(), true));
+        $data = json_decode((string)$request->getBody(), true);
+
+        if (!isset($data['action'])) {
+            throw new SendCloudWebhookException(
+                'Webhook request does not contain an action and is probably malformed.',
+                SendCloudWebhookException::CODE_INVALID_REQUEST
+            );
+        }
+
+        return new WebhookEvent($data);
     }
 
     /**
@@ -43,12 +52,18 @@ class Utility
     {
         $signatureHeader = $request->getHeader('SendCloud-Signature');
         if (count($signatureHeader) === 0) {
-            throw new SendCloudWebhookException('Webhook request does not specify a signature header.');
+            throw new SendCloudWebhookException(
+                'Webhook request does not specify a signature header.',
+                SendCloudWebhookException::CODE_INVALID_REQUEST
+            );
         }
         $signatureHeader = reset($signatureHeader);
 
         if (hash_hmac('sha256', (string)$request->getBody(), $secretKey) !== $signatureHeader) {
-            throw new SendCloudWebhookException('Hashed webhook payload does not match SendCloud-supplied header.');
+            throw new SendCloudWebhookException(
+                'Hashed webhook payload does not match SendCloud-supplied header.',
+                SendCloudWebhookException::CODE_VERIFICATION_FAILED
+            );
         }
     }
 }
