@@ -86,8 +86,8 @@ class Parcel
     /** @var int */
     protected $id;
 
-    /** @var string[] */
-    protected $labelUrls = [];
+    /** @var string[]|null */
+    protected $labelUrls;
 
     /** @var string|null */
     protected $trackingUrl;
@@ -121,16 +121,10 @@ class Parcel
 
         if (isset($data['tracking_url'])) {
             $this->trackingUrl = (string)$data['tracking_url'];
-        } elseif ($this->trackingNumber) {
-            // Fall back to using the number if there is no URL (URL is undocumented but convenient)
-            $this->trackingUrl = sprintf(
-                'https://tracking.sendcloud.sc/?code=%s&verification=%s',
-                $this->trackingNumber,
-                str_replace(' ', '', (string)$data['postal_code'])
-            );
         }
 
         if (isset($data['label']['label_printer'], $data['label']['normal_printer'])) {
+            $this->labelUrls = [];
             $this->labelUrls[self::LABEL_FORMAT_A6] = (string)$data['label']['label_printer'];
             $this->labelUrls[self::LABEL_FORMAT_A4_TOP_LEFT] = (string)$data['label']['normal_printer'][0];
             $this->labelUrls[self::LABEL_FORMAT_A4_TOP_RIGHT] = (string)$data['label']['normal_printer'][1];
@@ -162,6 +156,11 @@ class Parcel
     public function getId(): int
     {
         return $this->id;
+    }
+
+    public function hasLabel(): bool
+    {
+        return (bool)$this->labelUrls;
     }
 
     public function getLabelUrl(int $format): ?string

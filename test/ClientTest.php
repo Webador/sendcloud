@@ -71,7 +71,7 @@ class ClientTest extends TestCase
         $this->assertEquals('carrier_code', $shippingMethods[0]->getCarrier());
         $this->assertEquals(['BE' => 350, 'NL' => 420], $shippingMethods[0]->getPrices());
         $this->assertEquals(420, $shippingMethods[0]->getPriceForCountry('NL'));
-        $this->assertEquals(null, $shippingMethods[0]->getPriceForCountry('EN'));
+        $this->assertNull($shippingMethods[0]->getPriceForCountry('EN'));
     }
 
     public function testGetSenderAddresses(): void
@@ -110,7 +110,8 @@ class ClientTest extends TestCase
         $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
         $this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
         $this->assertEquals('', $parcel->getAddress()->getCompanyName());
-        $this->assertEquals(null, $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
+        $this->assertFalse($parcel->hasLabel());
+        $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
         $this->assertEquals(2486, $parcel->getWeight());
     }
 
@@ -165,6 +166,7 @@ class ClientTest extends TestCase
         $this->assertEquals(Parcel::STATUS_READY_TO_SEND, $parcel->getStatusId());
         $this->assertEquals('JVGL4004421100020097', $parcel->getTrackingNumber());
         $this->assertEquals('https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd', $parcel->getTrackingUrl());
+        $this->assertTrue($parcel->hasLabel());
         $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
         $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT));
     }
