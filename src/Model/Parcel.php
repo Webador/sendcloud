@@ -98,6 +98,9 @@ class Parcel
     /** @var int */
     protected $weight;
 
+    /** @var string|null */
+    protected $carrier;
+
     public function __construct(array $data)
     {
         $this->id = (int)$data['id'];
@@ -130,6 +133,10 @@ class Parcel
             $this->labelUrls[self::LABEL_FORMAT_A4_TOP_RIGHT] = (string)$data['label']['normal_printer'][1];
             $this->labelUrls[self::LABEL_FORMAT_A4_BOTTOM_LEFT] = (string)$data['label']['normal_printer'][2];
             $this->labelUrls[self::LABEL_FORMAT_A4_BOTTOM_RIGHT] = (string)$data['label']['normal_printer'][3];
+        }
+
+        if (isset($data['carrier']['code'])) {
+            $this->carrier = (string)$data['carrier']['code'];
         }
     }
 
@@ -181,5 +188,10 @@ class Parcel
     public function getWeight(): int
     {
         return $this->weight;
+    }
+
+    public function getCarrier(): ?string
+    {
+        return $this->carrier;
     }
 }
