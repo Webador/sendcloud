@@ -101,6 +101,15 @@ class Parcel
     /** @var string|null */
     protected $carrier;
 
+    /** @var string|null */
+    protected $orderNumber;
+
+    /** @var int|null */
+    protected $shippingMethodId;
+
+    /** @var int|null */
+    protected $servicePointId;
+
     public function __construct(array $data)
     {
         $this->id = (int)$data['id'];
@@ -137,6 +146,18 @@ class Parcel
 
         if (isset($data['carrier']['code'])) {
             $this->carrier = (string)$data['carrier']['code'];
+        }
+
+        if (isset($data['order_number'])) {
+            $this->orderNumber = (string)$data['order_number'];
+        }
+
+        if (isset($data['shipment']['id'])) {
+            $this->shippingMethodId = (int)$data['shipment']['id'];
+        }
+
+        if (isset($data['to_service_point'])) {
+            $this->servicePointId = (int)$data['to_service_point'];
         }
     }
 
@@ -193,5 +214,20 @@ class Parcel
     public function getCarrier(): ?string
     {
         return $this->carrier;
+    }
+
+    public function getOrderNumber(): ?string
+    {
+        return $this->orderNumber;
+    }
+
+    public function getShippingMethodId(): ?int
+    {
+        return $this->shippingMethodId;
+    }
+
+    public function getServicePointId(): ?int
+    {
+        return $this->servicePointId;
     }
 }

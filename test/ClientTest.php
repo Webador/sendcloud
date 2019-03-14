@@ -113,6 +113,8 @@ class ClientTest extends TestCase
         $this->assertFalse($parcel->hasLabel());
         $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
         $this->assertEquals(2486, $parcel->getWeight());
+        $this->assertEquals('201900001', $parcel->getOrderNumber());
+        $this->assertNull($parcel->getShippingMethodId());
     }
 
     public function testUpdateParcel(): void
@@ -169,6 +171,8 @@ class ClientTest extends TestCase
         $this->assertTrue($parcel->hasLabel());
         $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
         $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT));
+        $this->assertEquals('dhl', $parcel->getCarrier());
+        $this->assertEquals(117, $parcel->getShippingMethodId());
     }
 
     public function testGetParcel(): void
