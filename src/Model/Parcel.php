@@ -78,7 +78,7 @@ class Parcel
     protected $trackingNumber;
 
     /** @var string */
-    protected $status;
+    protected $statusMessage;
 
     /** @var int */
     protected $statusId;
@@ -114,7 +114,7 @@ class Parcel
     {
         $this->id = (int)$data['id'];
         $this->statusId = (int)$data['status']['id'];
-        $this->status = (string)$data['status']['message'];
+        $this->statusMessage = (string)$data['status']['message'];
         $this->created = new \DateTimeImmutable((string)$data['date_created']);
         $this->trackingNumber = (string)$data['tracking_number'];
         $this->weight = round(((float)$data['weight']) * 1000);
@@ -171,9 +171,9 @@ class Parcel
         return $this->trackingNumber;
     }
 
-    public function getStatus(): string
+    public function getStatusMessage(): string
     {
-        return $this->status;
+        return $this->statusMessage;
     }
 
     public function getStatusId(): int
@@ -229,5 +229,37 @@ class Parcel
     public function getServicePointId(): ?int
     {
         return $this->servicePointId;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'address' => $this->getAddress()->toArray(),
+            'carrier' => $this->getCarrier(),
+            'created' => $this->getCreated()->format(DATE_ISO8601),
+            'id' => $this->getId(),
+            'labels' => array_map(function ($format) {
+                return $this->getLabelUrl($format);
+            }, self::LABEL_FORMATS),
+            'orderNumber' => $this->getOrderNumber(),
+            'servicePointId' => $this->getServicePointId(),
+            'shippingMethodId' => $this->getShippingMethodId(),
+            'statusId' => $this->getStatusId(),
+            'statusMessage' => $this->getStatusMessage(),
+            'trackingNumber' => $this->getTrackingNumber(),
+            'trackingUrl' => $this->getTrackingUrl(),
+            'weight' => $this->getWeight(),
+        ];
+    }
+
+    public function __toString(): string
+    {
+        if ($this->getOrderNumber()) {
+            $suffix = sprintf('for order %s', $this->getOrderNumber());
+        } else {
+            $suffix = sprintf('for %s', $this->getAddress());
+        }
+
+        return sprintf('parcel %s %s', $this->getId(), $suffix);
     }
 }

@@ -11,7 +11,7 @@ class User
     protected $companyName;
 
     /** @var string */
-    protected $telephone;
+    protected $phoneNumber;
 
     /** @var string */
     protected $address;
@@ -23,7 +23,7 @@ class User
     protected $city;
 
     /** @var string */
-    protected $email;
+    protected $emailAddress;
 
     /** @var \DateTime */
     protected $registered;
@@ -32,11 +32,11 @@ class User
     {
         $this->username = (string)$data['username'];
         $this->companyName = (string)$data['company_name'];
-        $this->telephone = (string)$data['telephone'];
+        $this->phoneNumber = (string)$data['telephone'];
         $this->address = (string)$data['address'];
         $this->postalCode = (string)$data['postal_code'];
         $this->city = (string)$data['city'];
-        $this->email = (string)$data['email'];
+        $this->emailAddress = (string)$data['email'];
         $this->registered = new \DateTimeImmutable((string)$data['registered']);
     }
 
@@ -50,9 +50,9 @@ class User
         return $this->companyName;
     }
 
-    public function getTelephone(): string
+    public function getPhoneNumber(): string
     {
-        return $this->telephone;
+        return $this->phoneNumber;
     }
 
     public function getAddress(): string
@@ -70,13 +70,31 @@ class User
         return $this->city;
     }
 
-    public function getEmail(): string
+    public function getEmailAddress(): string
     {
-        return $this->email;
+        return $this->emailAddress;
     }
 
     public function getRegistered(): \DateTimeImmutable
     {
         return $this->registered;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'username' => $this->getUsername(),
+            'companyName' => $this->getCompanyName(),
+            'phoneNumber' => $this->getPhoneNumber(),
+            'address' => $this->getAddress(),
+            'postalCode' => $this->getPostalCode(),
+            'city' => $this->getCity(),
+            'emailAddress' => $this->getEmailAddress(),
+        ];
+    }
+
+    public function __toString(): string
+    {
+        return $this->getUsername();
     }
 }

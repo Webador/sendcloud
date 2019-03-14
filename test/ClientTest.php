@@ -45,13 +45,12 @@ class ClientTest extends TestCase
 
         $this->assertEquals('johndoe', $user->getUsername());
         $this->assertEquals('SendCloud', $user->getCompanyName());
-        $this->assertEquals('+31626262626', $user->getTelephone());
+        $this->assertEquals('+31626262626', $user->getPhoneNumber());
         $this->assertEquals('Insulindelaan', $user->getAddress());
         $this->assertEquals('Eindhoven', $user->getCity());
         $this->assertEquals('5642CV', $user->getPostalCode());
-        $this->assertEquals('johndoe@sendcloud.nl', $user->getEmail());
+        $this->assertEquals('johndoe@sendcloud.nl', $user->getEmailAddress());
         $this->assertEquals(new \DateTimeImmutable('2018-05-29 12:52:51'), $user->getRegistered());
-
     }
 
     public function testGetShippingMethods(): void

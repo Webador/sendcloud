@@ -7,7 +7,7 @@ class Address
     /** @var string */
     protected $name;
 
-    /** @var string */
+    /** @var string|null */
     protected $companyName;
 
     /** @var string */
@@ -28,7 +28,7 @@ class Address
     /** @var string */
     protected $emailAddress;
 
-    /** @var string */
+    /** @var string|null */
     protected $phoneNumber;
 
     public function __construct(
@@ -43,14 +43,14 @@ class Address
         ?string $phoneNumber
     ) {
         $this->name = $name;
-        $this->companyName = $companyName ?? '';
+        $this->companyName = $companyName;
         $this->street = $street;
         $this->houseNumber = $houseNumber;
         $this->city = $city;
         $this->postalCode = $postalCode;
         $this->countryCode = $countryCode;
         $this->emailAddress = $emailAddress;
-        $this->phoneNumber = $phoneNumber ?? '';
+        $this->phoneNumber = $phoneNumber;
     }
 
     public function getName(): string
@@ -63,12 +63,12 @@ class Address
         $this->name = $name;
     }
 
-    public function getCompanyName(): string
+    public function getCompanyName(): ?string
     {
         return $this->companyName;
     }
 
-    public function setCompanyName(string $companyName): void
+    public function setCompanyName(?string $companyName): void
     {
         $this->companyName = $companyName;
     }
@@ -133,13 +133,45 @@ class Address
         $this->emailAddress = $emailAddress;
     }
 
-    public function getPhoneNumber(): string
+    public function getPhoneNumber(): ?string
     {
         return $this->phoneNumber;
     }
 
-    public function setPhoneNumber(string $phoneNumber): void
+    public function setPhoneNumber(?string $phoneNumber): void
     {
         $this->phoneNumber = $phoneNumber;
+    }
+
+    public function getDisplayName(): string
+    {
+        $displayName = $this->getName();
+
+        if ($this->getCompanyName()) {
+            $displayName .= ' / ' . $this->getCompanyName();
+        }
+
+        return $displayName;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'city' => $this->getCity(),
+            'companyName' => $this->getCompanyName(),
+            'countryCode' => $this->getCountryCode(),
+            'displayName' => $this->getDisplayName(),
+            'emailAddress' => $this->getEmailAddress(),
+            'houseNumber' => $this->getHouseNumber(),
+            'name' => $this->getName(),
+            'phoneNumber' => $this->getPhoneNumber(),
+            'postalCode' => $this->getPostalCode(),
+            'street' => $this->getStreet(),
+        ];
+    }
+
+    public function __toString(): string
+    {
+        return $this->getDisplayName();
     }
 }

@@ -365,14 +365,14 @@ class Client
         if ($shippingAddress) {
             $parcelData = array_merge($parcelData, [
                 'name' => $shippingAddress->getName(),
-                'company_name' => $shippingAddress->getCompanyName(),
+                'company_name' => $shippingAddress->getCompanyName() ?? '',
                 'address' => $shippingAddress->getStreet(),
                 'house_number' => $shippingAddress->getHouseNumber(),
                 'city' => $shippingAddress->getCity(),
                 'postal_code' => $shippingAddress->getPostalCode(),
                 'country' => $shippingAddress->getCountryCode(),
                 'email' => $shippingAddress->getEmailAddress(),
-                'telephone' => $shippingAddress->getPhoneNumber(),
+                'telephone' => $shippingAddress->getPhoneNumber() ?? '',
             ]);
         }
 
@@ -406,14 +406,14 @@ class Client
             /** @var Address $senderAddress */
             $parcelData = array_merge($parcelData, [
                 'from_name' => $senderAddress->getName(),
-                'from_company_name' => $senderAddress->getCompanyName(),
+                'from_company_name' => $senderAddress->getCompanyName() ?? '',
                 'from_address_1' => $senderAddress->getStreet(),
                 'from_address_2' => '',
                 'from_house_number' => $senderAddress->getHouseNumber(),
                 'from_city' => $senderAddress->getCity(),
                 'from_postal_code' => $senderAddress->getPostalCode(),
                 'from_country' => $senderAddress->getCountryCode(),
-                'from_telephone' => $senderAddress->getPhoneNumber(),
+                'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
                 'from_email' => $senderAddress->getEmailAddress(),
             ]);
         } elseif ($senderAddress !== null) {

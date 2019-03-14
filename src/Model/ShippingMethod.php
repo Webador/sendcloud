@@ -93,12 +93,17 @@ class ShippingMethod
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
-            'name' => $this->getName(),
-            'minimumWeight' => $this->getMinimumWeight(),
-            'maximumWeight' => $this->getMaximumWeight(),
             'carrier' => $this->getCarrier(),
+            'id' => $this->getId(),
+            'maximumWeight' => $this->getMaximumWeight(),
+            'minimumWeight' => $this->getMinimumWeight(),
+            'name' => $this->getName(),
             'prices' => $this->getPrices(),
         ];
+    }
+
+    public function __toString(): string
+    {
+        return $this->getName();
     }
 }
