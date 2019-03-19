@@ -2,54 +2,56 @@
 
 namespace JouwWeb\SendCloud\Exception;
 
-use GuzzleHttp\Exception\RequestException;
-
 class SendCloudRequestException extends SendCloudClientException
 {
     const CODE_UNKNOWN = 0;
     const CODE_NO_ADDRESS_DATA = 1;
     /** @var int User is not allowed to create a label for a paid package service. */
     const CODE_NOT_ALLOWED_TO_ANNOUNCE = 2;
-
+    const CODE_UNAUTHORIZED = 3;
     const CODES = [
         self::CODE_UNKNOWN,
         self::CODE_NO_ADDRESS_DATA,
         self::CODE_NOT_ALLOWED_TO_ANNOUNCE,
+        self::CODE_UNAUTHORIZED,
     ];
 
     /** @var int|null */
-    protected $responseCode;
+    protected $sendCloudCode;
 
     /** @var string|null */
-    protected $responseMessage;
+    protected $sendCloudMessage;
 
     public function __construct(
         string $message = '',
         int $code = SendCloudRequestException::CODE_UNKNOWN,
-        ?RequestException $guzzleException
+        \Throwable $previous = null,
+        ?int $sendCloudCode = null,
+        ?string $sendCloudMessage = null
     ) {
-        // Add the error provided by SendCloud to the message
-        if ($guzzleException && $guzzleException->hasResponse()) {
-            $response = json_decode($guzzleException->getResponse()->getBody());
+        parent::__construct($message, $code, $previous);
 
-            if ($response && isset($response->error, $response->error->code, $response->error->message)) {
-                $this->responseCode = (int)$response->error->code;
-                $this->responseMessage = (string)$response->error->message;
-
-                $message .= sprintf(' (%s: %s)', $this->getResponseCode(), $this->getResponseMessage());
-            }
-        }
-
-        parent::__construct($message, $code, $guzzleException);
+        $this->sendCloudCode = $sendCloudCode;
+        $this->sendCloudMessage = $sendCloudMessage;
     }
 
-    public function getResponseCode(): ?int
+    /**
+     * Returns the code reported by SendCloud when available. This usually equals the HTTP status code.
+     *
+     * @return int|null
+     */
+    public function getSendCloudCode(): ?int
     {
-        return $this->responseCode;
+        return $this->sendCloudCode;
     }
 
-    public function getResponseMessage(): ?string
+    /**
+     * Returns the error message reported by SendCloud when available.
+     *
+     * @return string|null
+     */
+    public function getSendCloudMessage(): ?string
     {
-        return $this->responseMessage;
+        return $this->sendCloudMessage;
     }
 }

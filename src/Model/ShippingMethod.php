@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class ShippingMethod
 {
@@ -22,16 +22,16 @@ class ShippingMethod
     /** @var int[] */
     protected $prices = [];
 
-    public function __construct(\stdClass $data)
+    public function __construct(array $data)
     {
-        $this->id = (int)$data->id;
-        $this->name = (string)$data->name;
-        $this->minimumWeight = (int)($data->min_weight * 1000);
-        $this->maximumWeight = (int)($data->max_weight * 1000);
-        $this->carrier = (string)$data->carrier;
+        $this->id = (int)$data['id'];
+        $this->name = (string)$data['name'];
+        $this->minimumWeight = (int)($data['min_weight'] * 1000);
+        $this->maximumWeight = (int)($data['max_weight'] * 1000);
+        $this->carrier = (string)$data['carrier'];
 
-        foreach ((array)$data->countries as $country) {
-            $this->prices[$country->iso_2] = (int)($country->price * 100);
+        foreach ((array)$data['countries'] as $country) {
+            $this->prices[$country['iso_2']] = (int)($country['price'] * 100);
         }
     }
 
@@ -93,12 +93,17 @@ class ShippingMethod
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
-            'name' => $this->getName(),
-            'minimumWeight' => $this->getMinimumWeight(),
-            'maximumWeight' => $this->getMaximumWeight(),
             'carrier' => $this->getCarrier(),
+            'id' => $this->getId(),
+            'maximumWeight' => $this->getMaximumWeight(),
+            'minimumWeight' => $this->getMinimumWeight(),
+            'name' => $this->getName(),
             'prices' => $this->getPrices(),
         ];
+    }
+
+    public function __toString(): string
+    {
+        return $this->getName();
     }
 }

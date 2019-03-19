@@ -1,25 +1,45 @@
 {
     "name": "jouwweb/sendcloud",
-    "description": "Provides a client to interact with the SendCloud API.",
+    "description": "Provides a client to interact with the SendCloud API in an object-oriented way.",
+    "keywords": [
+        "sendcloud",
+        "client",
+        "api",
+        "jouwweb",
+        "parcel",
+        "webhook"
+    ],
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Villermen",
-            "email": "villermen@gmail.com"
+            "name": "Sjoerd Nuijten",
+            "email": "sjoerd@jouwweb.nl"
         }
     ],
-    "require": {
-        "ext-json": "*",
-        "guzzlehttp/guzzle": "^6.3",
-        "php": ">=7.1"
-    },
     "autoload": {
         "psr-4": {
             "JouwWeb\\SendCloud\\": "src"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Test\\JouwWeb\\SendCloud\\": "test"
+        }
+    },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "7.2"
+        }
+    },
+    "require": {
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^6.3",
+        "php": ">=7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0",
+        "symfony/var-dumper": "^4.2"
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\SendCloud\Model;
 
 class SenderAddress
 {
@@ -35,21 +35,21 @@ class SenderAddress
     protected $city;
 
     /** @var string */
-    protected $country;
+    protected $countryCode;
 
-    public function __construct(\stdClass $data)
+    public function __construct(array $data)
     {
-        $this->id = (int)$data->id;
-        $this->companyName = (string)$data->company_name;
-        $this->contactName = (string)$data->contact_name;
-        $this->email = (string)$data->email;
-        $this->telephone = (string)$data->telephone;
-        $this->street = (string)$data->street;
-        $this->houseNumber = (string)$data->house_number;
-        $this->postalBox = (string)$data->postal_box;
-        $this->postalCode = (string)$data->postal_code;
-        $this->city = (string)$data->city;
-        $this->country = (string)$data->country;
+        $this->id = (int)$data['id'];
+        $this->companyName = (string)$data['company_name'];
+        $this->contactName = (string)$data['contact_name'];
+        $this->email = (string)$data['email'];
+        $this->telephone = (string)$data['telephone'];
+        $this->street = (string)$data['street'];
+        $this->houseNumber = (string)$data['house_number'];
+        $this->postalBox = (string)$data['postal_box'];
+        $this->postalCode = (string)$data['postal_code'];
+        $this->city = (string)$data['city'];
+        $this->countryCode = (string)$data['country'];
     }
 
     public function getId(): int
@@ -102,14 +102,9 @@ class SenderAddress
         return $this->city;
     }
 
-    /**
-     * Country code.
-     *
-     * @return string
-     */
-    public function getCountry(): string
+    public function getCountryCode(): string
     {
-        return $this->country;
+        return $this->countryCode;
     }
 
     /**
@@ -117,31 +112,37 @@ class SenderAddress
      *
      * @return string
      */
-    public function getDescription(): string
+    public function getDisplayName(): string
     {
-        return implode(' ', [
+        return sprintf(
+            '%s, %s %s, %s',
             $this->getCompanyName(),
             $this->getStreet(),
             $this->getHouseNumber(),
-            $this->getPostalCode(),
-            $this->getCity(),
-        ]);
+            $this->getCity()
+        );
     }
 
     public function toArray(): array
     {
         return [
-            'id' => $this->getId(),
+            'city' => $this->getCity(),
             'companyName' => $this->getCompanyName(),
             'contactName' => $this->getContactName(),
+            'country' => $this->getCountryCode(),
+            'displayName' => $this->getDisplayName(),
             'email' => $this->getEmail(),
-            'telephone' => $this->getTelephone(),
-            'street' => $this->getStreet(),
             'houseNumber' => $this->getHouseNumber(),
+            'id' => $this->getId(),
             'postalBox' => $this->getPostalBox(),
             'postalCode' => $this->getPostalCode(),
-            'city' => $this->getCity(),
-            'country' => $this->getCountry(),
+            'street' => $this->getStreet(),
+            'telephone' => $this->getTelephone(),
         ];
+    }
+
+    public function __toString(): string
+    {
+        return $this->getDisplayName();
     }
 }
