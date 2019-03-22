@@ -9,11 +9,13 @@ class SendCloudRequestException extends SendCloudClientException
     /** @var int User is not allowed to create a label for a paid package service. */
     const CODE_NOT_ALLOWED_TO_ANNOUNCE = 2;
     const CODE_UNAUTHORIZED = 3;
+    const CODE_CONNECTION_FAILED = 4;
     const CODES = [
         self::CODE_UNKNOWN,
         self::CODE_NO_ADDRESS_DATA,
         self::CODE_NOT_ALLOWED_TO_ANNOUNCE,
         self::CODE_UNAUTHORIZED,
+        self::CODE_CONNECTION_FAILED,
     ];
 
     /** @var int|null */

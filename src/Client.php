@@ -3,6 +3,7 @@
 namespace JouwWeb\SendCloud;
 
 use function GuzzleHttp\default_user_agent;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
@@ -443,9 +444,18 @@ class Client
         $message = $defaultMessage;
         $code = SendCloudRequestException::CODE_UNKNOWN;
 
-        $responseData = json_decode((string)$exception->getResponse()->getBody(), true);
-        $responseCode = $responseData['error']['code'] ?? null;
-        $responseMessage = $responseData['error']['message'] ?? null;
+        $responseCode = null;
+        $responseMessage = null;
+        if ($exception->hasResponse()) {
+            $responseData = json_decode((string)$exception->getResponse()->getBody(), true);
+            $responseCode = $responseData['error']['code'] ?? null;
+            $responseMessage = $responseData['error']['message'] ?? null;
+        }
+
+        if ($exception instanceof ConnectException) {
+            $message = 'Could not contact SendCloud API.';
+            $code = SendCloudRequestException::CODE_CONNECTION_FAILED;
+        }
 
         // Precondition failed, parse response message to determine code of exception
         if ($exception->getCode() === 401) {

@@ -2,6 +2,7 @@
 
 namespace Test\JouwWeb\SendCloud;
 
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -223,6 +224,23 @@ class ClientTest extends TestCase
             $this->assertEquals(SendCloudRequestException::CODE_UNAUTHORIZED, $exception->getCode());
             $this->assertEquals(401, $exception->getSendCloudCode());
             $this->assertEquals('Invalid username/password.', $exception->getSendCloudMessage());
+        }
+    }
+
+    public function testParseRequestExceptionNoBody(): void
+    {
+        $this->guzzleClientMock->method('request')->willThrowException(new ConnectException(
+            'Failed to reach server or something.',
+            new Request('GET', 'https://some.uri')
+        ));
+
+        try {
+            $this->client->getUser();
+            $this->fail('getUser completed successfully while a SendCloudRequestException was expected.');
+        } catch (SendCloudRequestException $exception) {
+            $this->assertEquals(SendCloudRequestException::CODE_CONNECTION_FAILED, $exception->getCode());
+            $this->assertNull($exception->getSendCloudCode());
+            $this->assertNull($exception->getSendCloudMessage());
         }
     }
 }
