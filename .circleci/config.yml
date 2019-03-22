@@ -2,7 +2,7 @@ version: 2
 jobs:
     build:
         docker:
-            - image: circleci/php:7.1.3-cli-jessie
+            - image: circleci/php:7.1.13-cli-jessie
         steps:
             - checkout
             - restore_cache:
