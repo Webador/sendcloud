@@ -72,6 +72,7 @@ class ClientTest extends TestCase
         $this->assertEquals(['BE' => 350, 'NL' => 420], $shippingMethods[0]->getPrices());
         $this->assertEquals(420, $shippingMethods[0]->getPriceForCountry('NL'));
         $this->assertNull($shippingMethods[0]->getPriceForCountry('EN'));
+        $this->assertFalse($shippingMethods[0]->getAllowsServicePoints());
     }
 
     public function testGetSenderAddresses(): void

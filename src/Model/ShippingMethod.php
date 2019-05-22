@@ -22,6 +22,9 @@ class ShippingMethod
     /** @var int[] */
     protected $prices = [];
 
+    /** @var bool */
+    protected $allowsServicePoints = false;
+
     public function __construct(array $data)
     {
         $this->id = (int)$data['id'];
@@ -29,6 +32,9 @@ class ShippingMethod
         $this->minimumWeight = (int)($data['min_weight'] * 1000);
         $this->maximumWeight = (int)($data['max_weight'] * 1000);
         $this->carrier = (string)$data['carrier'];
+
+        $servicePointInput = (string)$data['service_point_input'];
+        $this->allowsServicePoints = ($servicePointInput !== 'none');
 
         foreach ((array)$data['countries'] as $country) {
             $this->prices[$country['iso_2']] = (int)($country['price'] * 100);
@@ -88,6 +94,11 @@ class ShippingMethod
     public function getPriceForCountry(string $countryCode): ?int
     {
         return $this->prices[$countryCode] ?? null;
+    }
+
+    public function getAllowsServicePoints(): bool
+    {
+        return $this->allowsServicePoints;
     }
 
     public function toArray(): array
