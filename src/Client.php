@@ -343,6 +343,31 @@ class Client
     }
 
     /**
+     * Returns the return portal URL for the given parcel. Returns `null` when no return portal is configured or the
+     * parcel is not associated with a brand.
+     *
+     * @param Parcel|int $parcel
+     * @return string|null
+     */
+    public function getReturnPortalUrl($parcel): ?string
+    {
+        try {
+            $response = $this->guzzleClient->get(sprintf(
+                'parcels/%s/return_portal_url',
+                $this->parseParcelArgument($parcel)
+            ));
+
+            return (string)json_decode($response->getBody(), true)['url'];
+        } catch (RequestException $exception) {
+            if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 404) {
+                return null;
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
      * Returns the given arguments as data in SendCloud parcel format.
      *
      * @param int|null $parcelId

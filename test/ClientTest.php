@@ -244,4 +244,29 @@ class ClientTest extends TestCase
             $this->assertNull($exception->getSendCloudMessage());
         }
     }
+
+    public function testGetReturnPortalUrl(): void
+    {
+        $this->guzzleClientMock->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"url":"https://awesome.shipping-portal.com/returns/initiate/HocusBogusPayloadPath/"}'
+        ));
+
+        $this->assertEquals(
+            'https://awesome.shipping-portal.com/returns/initiate/HocusBogusPayloadPath/',
+            $this->client->getReturnPortalUrl(9265)
+        );
+    }
+
+    public function testGetReturnPortalUrlNotFound(): void
+    {
+        $this->guzzleClientMock->method('request')->willThrowException(new RequestException(
+            "Client error: `GET https://panel.sendcloud.sc/api/v2/parcels/23676385/return_portal_url` resulted in a `404 Not Found` response:\n{\"url\":null}\n",
+            new Request('GET', 'https://some.url'),
+            new Response(404, [], '{"url":null}')
+        ));
+
+        $this->assertNull($this->client->getReturnPortalUrl(9265));
+    }
 }
