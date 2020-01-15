@@ -524,4 +524,37 @@ class Client
 
         throw new \InvalidArgumentException('Parcel argument must be a parcel or parcel ID.');
     }
+
+    /**
+     * Fetches the PDF labels for the given parcels in bulk, Parcels must already have a labels created.
+     *
+     * @param array $parcels
+     * @return string PDF data.
+     * @throws SendCloudClientException
+     * @throws SendCloudRequestException
+     * @throws SendCloudStateException
+     */
+    public function getBulkLabelsPdf(array $parcels): string
+    {
+        try {
+            $response = $this->guzzleClient->post('labels', [
+                'json' => [
+                    'parcels' => $parcels,
+                ],
+            ]);
+        } catch (RequestException $exception) {
+            throw $this->parseRequestException($exception, 'Could not retrieve labels.');
+        }
+
+        $labels = $response->getBody();
+        if (!isset($labels['label']['label_printer'])) {
+            throw new SendCloudStateException('SendCloud parcel does not have any labels.');
+        }
+
+        try {
+            return (string)$this->guzzleClient->get($labels['label']['label_printer'])->getBody();
+        } catch (RequestException $exception) {
+            throw $this->parseRequestException($exception, 'Could not retrieve labels.');
+        }
+    }
 }
