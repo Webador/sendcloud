@@ -546,7 +546,7 @@ class Client
             throw $this->parseRequestException($exception, 'Could not retrieve labels.');
         }
 
-        $labels = $response->getBody();
+        $labels = json_decode((string)$response->getBody(), true);
         if (!isset($labels['label']['label_printer'])) {
             throw new SendCloudStateException('SendCloud parcel does not have any labels.');
         }
