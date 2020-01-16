@@ -539,7 +539,9 @@ class Client
         try {
             $response = $this->guzzleClient->post('labels', [
                 'json' => [
-                    'parcels' => $parcels,
+                    'label' => [
+                        'parcels' => $parcels,
+                    ]
                 ],
             ]);
         } catch (RequestException $exception) {
