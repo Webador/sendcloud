@@ -3,6 +3,7 @@
 namespace JouwWeb\SendCloud;
 
 use JouwWeb\SendCloud\Exception\SendCloudWebhookException;
+use JouwWeb\SendCloud\Model\Parcel;
 use JouwWeb\SendCloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
 
@@ -65,5 +66,34 @@ class Utility
                 SendCloudWebhookException::CODE_VERIFICATION_FAILED
             );
         }
+    }
+
+    /**
+     * Returns the URL to the label with the given format if it is contained in the data.
+     *
+     * @param mixed[] $data
+     * @param int $format
+     * @return string|null
+     */
+    public static function getLabelUrlFromData(array $data, int $format): ?string
+    {
+        $labelUrl = null;
+        switch ($format) {
+            case Parcel::LABEL_FORMAT_A6:
+                $labelUrl = ($data['label']['label_printer'] ?? null);
+                break;
+
+            case Parcel::LABEL_FORMAT_A4_TOP_LEFT:
+            case Parcel::LABEL_FORMAT_A4_TOP_RIGHT:
+            case Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT:
+            case Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT:
+                $labelUrl = ($data['label']['normal_printer'][$format - 2] ?? null);
+                break;
+
+            default:
+                throw new \InvalidArgumentException(sprintf('Invalid label format "%s".', $format));
+        }
+
+        return ($labelUrl ? (string)$labelUrl : null);
     }
 }

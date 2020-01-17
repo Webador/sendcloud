@@ -259,14 +259,12 @@ class Client
     }
 
     /**
-     * Fetches the PDF label for the given parcel, The parcel must already have a label created.
+     * Fetches the PDF label for the given parcel. The parcel must already have a label created.
      *
      * @param Parcel|int $parcel
      * @param int $format `Parcel::LABEL_FORMATS`
      * @return string PDF data.
      * @throws SendCloudClientException
-     * @throws SendCloudRequestException
-     * @throws SendCloudStateException
      */
     public function getLabelPdf($parcel, int $format): string
     {
@@ -290,6 +288,53 @@ class Client
             return (string)$this->guzzleClient->get($labelUrl)->getBody();
         } catch (RequestException $exception) {
             throw $this->parseRequestException($exception, 'Could not retrieve label.');
+        }
+    }
+
+    /**
+     * Fetches a single PDF containing labels for all the given parcels. Parcels that do not have a label available will
+     * not be contained in the PDF. If only parcels without a label have been requested it will result in an exception.
+     *
+     * @param Parcel[]|int[] $parcels
+     * @param int $format One of `Parcel::LABEL_FORMATS`. The A4 formats will contain up to 4 labels per page.
+     * @return string PDF data.
+     * @throws SendCloudClientException
+     */
+    public function getBulkLabelPdf(array $parcels, int $format): string
+    {
+        $parcelIds = [];
+        foreach ($parcels as $parcel) {
+            if (is_int($parcel)) {
+                $parcelIds[] = $parcel;
+            } elseif ($parcel instanceof Parcel) {
+                $parcelIds[] = $parcel->getId();
+            } else {
+                throw new \InvalidArgumentException('Parcels must be integers or Parcel instances.');
+            }
+        }
+
+        try {
+            $response = $this->guzzleClient->post('labels', [
+                'json' => [
+                    'label' => [
+                        'parcels' => $parcelIds,
+                    ]
+                ],
+            ]);
+        } catch (RequestException $exception) {
+            throw $this->parseRequestException($exception, 'Could not retrieve label information.');
+        }
+
+        $labelData = json_decode((string)$response->getBody(), true);
+        $labelUrl = Utility::getLabelUrlFromData($labelData, $format);
+        if (!$labelUrl) {
+            throw new SendCloudStateException('No label URL could be obtained from the response.');
+        }
+
+        try {
+            return (string)$this->guzzleClient->get($labelUrl)->getBody();
+        } catch (RequestException $exception) {
+            throw $this->parseRequestException($exception, 'Could not retrieve label PDF data.');
         }
     }
 
@@ -523,40 +568,5 @@ class Client
         }
 
         throw new \InvalidArgumentException('Parcel argument must be a parcel or parcel ID.');
-    }
-
-    /**
-     * Fetches the PDF labels for the given parcels in bulk, Parcels must already have a labels created.
-     *
-     * @param array $parcels
-     * @return string PDF data.
-     * @throws SendCloudClientException
-     * @throws SendCloudRequestException
-     * @throws SendCloudStateException
-     */
-    public function getBulkLabelsPdf(array $parcels): string
-    {
-        try {
-            $response = $this->guzzleClient->post('labels', [
-                'json' => [
-                    'label' => [
-                        'parcels' => $parcels,
-                    ]
-                ],
-            ]);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve labels.');
-        }
-
-        $labels = json_decode((string)$response->getBody(), true);
-        if (!isset($labels['label']['label_printer'])) {
-            throw new SendCloudStateException('SendCloud parcel does not have any labels.');
-        }
-
-        try {
-            return (string)$this->guzzleClient->get($labels['label']['label_printer'])->getBody();
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve labels.');
-        }
     }
 }

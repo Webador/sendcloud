@@ -2,6 +2,8 @@
 
 namespace JouwWeb\SendCloud\Model;
 
+use JouwWeb\SendCloud\Utility;
+
 class Parcel
 {
     public const LABEL_FORMAT_A6 = 1;
@@ -135,13 +137,15 @@ class Parcel
             $this->trackingUrl = (string)$data['tracking_url'];
         }
 
-        if (isset($data['label']['label_printer'], $data['label']['normal_printer'])) {
-            $this->labelUrls = [];
-            $this->labelUrls[self::LABEL_FORMAT_A6] = (string)$data['label']['label_printer'];
-            $this->labelUrls[self::LABEL_FORMAT_A4_TOP_LEFT] = (string)$data['label']['normal_printer'][0];
-            $this->labelUrls[self::LABEL_FORMAT_A4_TOP_RIGHT] = (string)$data['label']['normal_printer'][1];
-            $this->labelUrls[self::LABEL_FORMAT_A4_BOTTOM_LEFT] = (string)$data['label']['normal_printer'][2];
-            $this->labelUrls[self::LABEL_FORMAT_A4_BOTTOM_RIGHT] = (string)$data['label']['normal_printer'][3];
+        $labelUrls = [];
+        foreach (self::LABEL_FORMATS as $format) {
+            $labelUrl = Utility::getLabelUrlFromData($data, $format);
+            if ($labelUrl) {
+                $labelUrls[$format] = $labelUrl;
+            }
+        }
+        if (count($labelUrls) > 0) {
+            $this->labelUrls = $labelUrls;
         }
 
         if (isset($data['carrier']['code'])) {

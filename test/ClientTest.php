@@ -269,4 +269,40 @@ class ClientTest extends TestCase
 
         $this->assertNull($this->client->getReturnPortalUrl(9265));
     }
+
+    public function testGetBulkLabelPdf(): void
+    {
+        $requestNumber = 0;
+        $this->guzzleClientMock->expects($this->exactly(2))->method('request')->willReturnCallback(
+            function ($method, $url, $data) use (&$requestNumber) {
+                $requestNumber++;
+
+                if ($requestNumber === 1) {
+                    $this->assertEquals(['json' => ['label' => ['parcels' => [0 => 1234, 1 => 4321]]]], $data);
+                    return new Response(
+                        200,
+                        [],
+                        '{"label":{"normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=3"],"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer?ids=1234,4321"}}'
+                    );
+                }
+
+                if ($requestNumber === 2) {
+                    $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0', $url);
+                    return new Response(
+                        200,
+                        [],
+                        'pdfdata'
+                    );
+                }
+
+                return null;
+            }
+        );
+
+        $parcelMock = $this->createMock(Parcel::class);
+        $parcelMock->method('getId')->willReturn(4321);
+
+        $pdf = $this->client->getBulkLabelPdf([1234, $parcelMock], Parcel::LABEL_FORMAT_A4_TOP_LEFT);
+        $this->assertEquals('pdfdata', $pdf);
+    }
 }
