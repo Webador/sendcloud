@@ -62,7 +62,7 @@ class Utility
 
         if (hash_hmac('sha256', (string)$request->getBody(), $secretKey) !== $signatureHeader) {
             throw new SendCloudWebhookException(
-                'Hashed webhook payload does not match SendCloud-supplied header.',
+                'Hashed webhook payload does not match Sendcloud-supplied header.',
                 SendCloudWebhookException::CODE_VERIFICATION_FAILED
             );
         }

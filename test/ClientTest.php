@@ -10,6 +10,7 @@ use JouwWeb\SendCloud\Client;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
+use JouwWeb\SendCloud\Model\ParcelItem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -118,6 +119,45 @@ class ClientTest extends TestCase
         $this->assertNull($parcel->getShippingMethodId());
     }
 
+    public function testCreateParcelCustoms(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')
+            ->willReturnCallback(function () {
+                $this->assertEquals([
+                    'post',
+                    'parcels',
+                    ['json' => ['parcel' => ['name' => 'Dr. Coffee', 'company_name' => '', 'address' => 'Street', 'house_number' => '123', 'city' => 'Place', 'postal_code' => '7837', 'country' => 'BM', 'email' => 'drcoffee@drcoffee.dr', 'telephone' => '', 'customs_invoice_nr' => 'customsInvoiceNumber', 'customs_shipment_type' => 2, 'parcel_items' => [0 => ['description' => 'green tea', 'quantity' => 1, 'weight' => '0.123', 'value' => 15.2, 'hs_code' => '090210', 'origin_country' => 'EC'], 1 => ['description' => 'cardboard', 'quantity' => 3, 'weight' => '0.05','value' => 0.2, 'hs_code' => '090210', 'origin_country' => 'NL']]]]],
+                ], func_get_args());
+
+                return new Response(200, [], '{"parcel":{"id":36054805,"address":"Street 123","address_2":"","address_divided":{"house_number":"123","street":"Street"},"city":"Place","company_name":"","country":{"iso_2":"BM","iso_3":"BMU","name":"Bermuda"},"data":{},"date_created":"06-02-2020 21:33:13","email":"drcoffee@drcoffee.dr","name":"Dr. Coffee","postal_code":"7837","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"1.000","label":{},"customs_declaration":{},"order_number":"","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"customsInvoiceNumber","customs_shipment_type":2,"parcel_items":[{"description":"cardboard","quantity":3,"weight":"0.050","value":"0.20","hs_code":"090210","origin_country":"NL","product_id":"","properties":{},"sku":"","return_reason":null,"return_message":null},{"description":"green tea","quantity":1,"weight":"0.123","value":"15.20","hs_code":"090210","origin_country":"EC","product_id":"","properties":{},"sku":"","return_reason":null,"return_message":null}],"documents":[],"type":null,"shipment_uuid":"f893c98c-43a6-49bb-9dda-9bf3e76a87ad","shipping_method":null,"external_order_id":"36054805","external_shipment_id":"","external_reference":null,"is_return":false,"note":""}}');
+            });
+
+        $parcel = $this->client->createParcel(
+            new Address('Dr. Coffee', null, 'Street', '123', 'Place', '7837', 'BM', 'drcoffee@drcoffee.dr', null),
+            null,
+            null,
+            null,
+            'customsInvoiceNumber',
+            Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS,
+            [
+                'keyIgnored' => new ParcelItem('green tea', 1, 123, 15.20, '090210', 'EC'),
+                new ParcelItem('cardboard', 3, 50, 0.20, '090210', 'NL'),
+            ]
+        );
+
+        $this->assertEquals('customsInvoiceNumber', $parcel->getCustomsInvoiceNumber());
+        $this->assertEquals(Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS, $parcel->getCustomsShipmentType());
+        $this->assertCount(2, $parcel->getItems());
+        $this->assertEquals([
+            'description' => 'green tea',
+            'quantity' => 1,
+            'weight' => 123,
+            'value' => 15.2,
+            'harmonizedSystemCode' => '090210',
+            'originCountryCode' => 'EC',
+        ], $parcel->getItems()[1]->toArray());
+    }
+
     public function testUpdateParcel(): void
     {
         // Test that update only updates the address details (and not e.g., order number/weight)
@@ -126,22 +166,7 @@ class ClientTest extends TestCase
                 $this->assertEquals([
                     'put',
                     'parcels',
-                    [
-                        'json' => [
-                            'parcel' => [
-                                'id' => 8293794,
-                                'name' => 'Completely different person',
-                                'company_name' => 'Some company',
-                                'address' => 'Rosebud',
-                                'house_number' => '2134A',
-                                'city' => 'Almanda',
-                                'postal_code' => '9238DD',
-                                'country' => 'NL',
-                                'email' => 'completelydifferent@email.com',
-                                'telephone' => '+31699999999',
-                            ],
-                        ],
-                    ],
+                    ['json' => ['parcel' => ['id' => 8293794, 'name' => 'Completely different person', 'company_name' => 'Some company', 'address' => 'Rosebud', 'house_number' => '2134A', 'city' => 'Almanda', 'postal_code' => '9238DD', 'country' => 'NL', 'email' => 'completelydifferent@email.com', 'telephone' => '+31699999999']]]
                 ], func_get_args());
 
                 return new Response(

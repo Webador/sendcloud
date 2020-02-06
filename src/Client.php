@@ -2,6 +2,7 @@
 
 namespace JouwWeb\SendCloud;
 
+use JouwWeb\SendCloud\Model\ParcelItem;
 use function GuzzleHttp\default_user_agent;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
@@ -18,7 +19,7 @@ use JouwWeb\SendCloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * Client to perform calls on the SendCloud API.
+ * Client to perform calls on the Sendcloud API.
  */
 class Client
 {
@@ -66,7 +67,7 @@ class Client
     }
 
     /**
-     * Fetches basic details about the SendCloud account.
+     * Fetches basic details about the Sendcloud account.
      *
      * @return User
      * @throws SendCloudRequestException
@@ -76,12 +77,12 @@ class Client
         try {
             return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'An error occurred while fetching the SendCloud user.');
+            throw $this->parseRequestException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
     }
 
     /**
-     * Fetches available SendCloud shipping methods.
+     * Fetches available Sendcloud shipping methods.
      *
      * @param int|null $servicePointId If passed, only shipping methods to the service point will be returned.
      * @return ShippingMethod[]
@@ -118,19 +119,22 @@ class Client
         } catch (RequestException $exception) {
             throw $this->parseRequestException(
                 $exception,
-                'An error occurred while fetching shipping methods from the SendCloud API.'
+                'An error occurred while fetching shipping methods from the Sendcloud API.'
             );
         }
     }
 
     /**
-     * Creates a parcel in SendCloud.
+     * Creates a parcel in Sendcloud.
      *
      * @param Address $shippingAddress Address to be shipped to.
      * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
      * still required as it will be printed on the label.
      * @param string|null $orderNumber
-     * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
+     * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
+     * @param string|null $customsInvoiceNumber
+     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param ParcelItem[]|null $items Items contained in the parcel.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -138,7 +142,10 @@ class Client
         Address $shippingAddress,
         ?int $servicePointId,
         ?string $orderNumber = null,
-        ?int $weight = null
+        ?int $weight = null,
+        ?string $customsInvoiceNumber = null,
+        ?int $customsShipmentType = null,
+        ?array $items = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             null,
@@ -148,7 +155,10 @@ class Client
             $weight,
             false,
             null,
-            null
+            null,
+            $customsInvoiceNumber,
+            $customsShipmentType,
+            $items
         );
 
         try {
@@ -160,7 +170,7 @@ class Client
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel in SendCloud.');
+            throw $this->parseRequestException($exception, 'Could not create parcel in Sendcloud.');
         }
     }
 
@@ -181,6 +191,9 @@ class Client
             null,
             null,
             false,
+            null,
+            null,
+            null,
             null,
             null
         );
@@ -203,7 +216,7 @@ class Client
      *
      * @param Parcel|int $parcel
      * @param int $shippingMethodId
-     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @return Parcel
      * @throws SendCloudRequestException
@@ -218,7 +231,10 @@ class Client
             null,
             true,
             $shippingMethodId,
-            $senderAddress
+            $senderAddress,
+            null,
+            null,
+            null
         );
 
         try {
@@ -230,7 +246,7 @@ class Client
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel with SendCloud.');
+            throw $this->parseRequestException($exception, 'Could not create parcel with Sendcloud.');
         }
     }
 
@@ -424,6 +440,9 @@ class Client
      * @param int|null $shippingMethodId Required if requesting a label.
      * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
+     * @param string|null $customsInvoiceNumber
+     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param ParcelItem[]|null $items
      * @return mixed[]
      */
     protected function getParcelData(
@@ -434,7 +453,10 @@ class Client
         ?int $weight,
         bool $requestLabel,
         ?int $shippingMethodId,
-        $senderAddress
+        $senderAddress,
+        ?string $customsInvoiceNumber,
+        ?int $customsShipmentType,
+        ?array $items
     ): array {
         $parcelData = [];
 
@@ -465,53 +487,92 @@ class Client
         }
 
         if ($weight) {
-            $parcelData['weight'] = ceil($weight / 1000);
+            $parcelData['weight'] = (string)($weight / 1000);
         }
 
-        if (!$requestLabel) {
-            return $parcelData;
+        if ($customsInvoiceNumber) {
+            $parcelData['customs_invoice_nr'] = $customsInvoiceNumber;
         }
 
-        // Additional fields are added when requesting a label
-        $parcelData['request_label'] = true;
+        if ($customsShipmentType !== null) {
+            if (!in_array($customsShipmentType, Parcel::CUSTOMS_SHIPMENT_TYPES)) {
+                throw new \InvalidArgumentException(sprintf('Invalid customs shipment type %s.', $customsShipmentType));
+            }
 
-        // Sender address
-        if ($senderAddress instanceof SenderAddress) {
-            $senderAddress = $senderAddress->getId();
-        }
-        if (is_int($senderAddress)) {
-            /** @var int $senderAddress */
-            $parcelData['sender_address'] = $senderAddress;
-        } elseif ($senderAddress instanceof Address) {
-            /** @var Address $senderAddress */
-            $parcelData = array_merge($parcelData, [
-                'from_name' => $senderAddress->getName(),
-                'from_company_name' => $senderAddress->getCompanyName() ?? '',
-                'from_address_1' => $senderAddress->getStreet(),
-                'from_address_2' => '',
-                'from_house_number' => $senderAddress->getHouseNumber(),
-                'from_city' => $senderAddress->getCity(),
-                'from_postal_code' => $senderAddress->getPostalCode(),
-                'from_country' => $senderAddress->getCountryCode(),
-                'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
-                'from_email' => $senderAddress->getEmailAddress(),
-            ]);
-        } elseif ($senderAddress !== null) {
-            throw new \InvalidArgumentException(
-                '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
-            );
+            $parcelData['customs_shipment_type'] = $customsShipmentType;
         }
 
-        // Shipping method
-        if (!$shippingMethodId) {
-            throw new \InvalidArgumentException(
-                '$shippingMethodId must be passed when requesting a label.'
-            );
+        if ($items) {
+            $itemsData = [];
+
+            foreach (array_values($items) as $index => $item) {
+                if (!($item instanceof ParcelItem)) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Parcel item at index %s is not an instance of ParcelItem.',
+                        $index
+                    ));
+                }
+
+                $itemData = [
+                    'description' => $item->getDescription(),
+                    'quantity' => $item->getQuantity(),
+                    'weight' => (string)($item->getWeight() / 1000),
+                    'value' => $item->getValue(),
+                ];
+                if ($item->getHarmonizedSystemCode()) {
+                    $itemData['hs_code'] = $item->getHarmonizedSystemCode();
+                }
+                if ($item->getOriginCountryCode()) {
+                    $itemData['origin_country'] = $item->getOriginCountryCode();
+                }
+                $itemsData[] = $itemData;
+            }
+
+            $parcelData['parcel_items'] = $itemsData;
         }
 
-        $parcelData['shipment'] = [
-            'id' => $shippingMethodId,
-        ];
+        // Additional fields are only added when requesting a label
+        if ($requestLabel) {
+            $parcelData['request_label'] = true;
+
+            // Sender address
+            if ($senderAddress instanceof SenderAddress) {
+                $senderAddress = $senderAddress->getId();
+            }
+            if (is_int($senderAddress)) {
+                /** @var int $senderAddress */
+                $parcelData['sender_address'] = $senderAddress;
+            } elseif ($senderAddress instanceof Address) {
+                /** @var Address $senderAddress */
+                $parcelData = array_merge($parcelData, [
+                    'from_name' => $senderAddress->getName(),
+                    'from_company_name' => $senderAddress->getCompanyName() ?? '',
+                    'from_address_1' => $senderAddress->getStreet(),
+                    'from_address_2' => '',
+                    'from_house_number' => $senderAddress->getHouseNumber(),
+                    'from_city' => $senderAddress->getCity(),
+                    'from_postal_code' => $senderAddress->getPostalCode(),
+                    'from_country' => $senderAddress->getCountryCode(),
+                    'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
+                    'from_email' => $senderAddress->getEmailAddress(),
+                ]);
+            } elseif ($senderAddress !== null) {
+                throw new \InvalidArgumentException(
+                    '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
+                );
+            }
+
+            // Shipping method
+            if (!$shippingMethodId) {
+                throw new \InvalidArgumentException(
+                    '$shippingMethodId must be passed when requesting a label.'
+                );
+            }
+
+            $parcelData['shipment'] = [
+                'id' => $shippingMethodId,
+            ];
+        }
 
         return $parcelData;
     }

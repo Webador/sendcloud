@@ -38,7 +38,7 @@ class SendCloudRequestException extends SendCloudClientException
     }
 
     /**
-     * Returns the code reported by SendCloud when available. This usually equals the HTTP status code.
+     * Returns the code reported by Sendcloud when available. This usually equals the HTTP status code.
      *
      * @return int|null
      */
@@ -48,7 +48,7 @@ class SendCloudRequestException extends SendCloudClientException
     }
 
     /**
-     * Returns the error message reported by SendCloud when available.
+     * Returns the error message reported by Sendcloud when available.
      *
      * @return string|null
      */

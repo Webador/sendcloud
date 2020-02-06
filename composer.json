@@ -1,6 +1,6 @@
 {
     "name": "jouwweb/sendcloud",
-    "description": "Provides a client to interact with the SendCloud API in an object-oriented way.",
+    "description": "Provides a client to interact with the Sendcloud API in an object-oriented way.",
     "keywords": [
         "sendcloud",
         "client",
