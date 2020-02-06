@@ -44,12 +44,20 @@ class ParcelItem
         return $item;
     }
 
-    public function __construct(string $description, int $quantity, int $weight, float $value)
-    {
+    public function __construct(
+        string $description,
+        int $quantity,
+        int $weight,
+        float $value,
+        ?string $harmonizedSystemCode = null,
+        ?string $originCountryCode = null
+    ) {
         $this->setDescription($description);
         $this->setQuantity($quantity);
         $this->setWeight($weight);
         $this->setValue($value);
+        $this->setHarmonizedSystemCode($harmonizedSystemCode);
+        $this->setOriginCountryCode($originCountryCode);
     }
 
     public function getDescription(): string

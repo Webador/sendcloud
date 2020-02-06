@@ -141,7 +141,7 @@ class Parcel
         $this->statusMessage = (string)$data['status']['message'];
         $this->created = new \DateTimeImmutable((string)$data['date_created']);
         $this->trackingNumber = (string)$data['tracking_number'];
-        $this->weight = round(((float)$data['weight']) * 1000);
+        $this->weight = (int)round(((float)$data['weight']) * 1000);
 
         $this->address = new Address(
             (string)$data['name'],

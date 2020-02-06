@@ -174,8 +174,6 @@ class Client
         }
     }
 
-    // TODO: ??? public function createInternationalParcel(
-
     /**
      * Update details of an existing parcel.
      *
@@ -492,55 +490,10 @@ class Client
             $parcelData['weight'] = (string)($weight / 1000);
         }
 
-        if (!$requestLabel) {
-            return $parcelData;
-        }
-
-        // Additional fields are added when requesting a label
-        $parcelData['request_label'] = true;
-
-        // Sender address
-        if ($senderAddress instanceof SenderAddress) {
-            $senderAddress = $senderAddress->getId();
-        }
-        if (is_int($senderAddress)) {
-            /** @var int $senderAddress */
-            $parcelData['sender_address'] = $senderAddress;
-        } elseif ($senderAddress instanceof Address) {
-            /** @var Address $senderAddress */
-            $parcelData = array_merge($parcelData, [
-                'from_name' => $senderAddress->getName(),
-                'from_company_name' => $senderAddress->getCompanyName() ?? '',
-                'from_address_1' => $senderAddress->getStreet(),
-                'from_address_2' => '',
-                'from_house_number' => $senderAddress->getHouseNumber(),
-                'from_city' => $senderAddress->getCity(),
-                'from_postal_code' => $senderAddress->getPostalCode(),
-                'from_country' => $senderAddress->getCountryCode(),
-                'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
-                'from_email' => $senderAddress->getEmailAddress(),
-            ]);
-        } elseif ($senderAddress !== null) {
-            throw new \InvalidArgumentException(
-                '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
-            );
-        }
-
-        // Shipping method
-        if (!$shippingMethodId) {
-            throw new \InvalidArgumentException(
-                '$shippingMethodId must be passed when requesting a label.'
-            );
-        }
-
-        $parcelData['shipment'] = [
-            'id' => $shippingMethodId,
-        ];
-
-        // Customs
         if ($customsInvoiceNumber) {
             $parcelData['customs_invoice_nr'] = $customsInvoiceNumber;
         }
+
         if ($customsShipmentType !== null) {
             if (!in_array($customsShipmentType, Parcel::CUSTOMS_SHIPMENT_TYPES)) {
                 throw new \InvalidArgumentException(sprintf('Invalid customs shipment type %s.', $customsShipmentType));
@@ -576,6 +529,49 @@ class Client
             }
 
             $parcelData['parcel_items'] = $itemsData;
+        }
+
+        // Additional fields are only added when requesting a label
+        if ($requestLabel) {
+            $parcelData['request_label'] = true;
+
+            // Sender address
+            if ($senderAddress instanceof SenderAddress) {
+                $senderAddress = $senderAddress->getId();
+            }
+            if (is_int($senderAddress)) {
+                /** @var int $senderAddress */
+                $parcelData['sender_address'] = $senderAddress;
+            } elseif ($senderAddress instanceof Address) {
+                /** @var Address $senderAddress */
+                $parcelData = array_merge($parcelData, [
+                    'from_name' => $senderAddress->getName(),
+                    'from_company_name' => $senderAddress->getCompanyName() ?? '',
+                    'from_address_1' => $senderAddress->getStreet(),
+                    'from_address_2' => '',
+                    'from_house_number' => $senderAddress->getHouseNumber(),
+                    'from_city' => $senderAddress->getCity(),
+                    'from_postal_code' => $senderAddress->getPostalCode(),
+                    'from_country' => $senderAddress->getCountryCode(),
+                    'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
+                    'from_email' => $senderAddress->getEmailAddress(),
+                ]);
+            } elseif ($senderAddress !== null) {
+                throw new \InvalidArgumentException(
+                    '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
+                );
+            }
+
+            // Shipping method
+            if (!$shippingMethodId) {
+                throw new \InvalidArgumentException(
+                    '$shippingMethodId must be passed when requesting a label.'
+                );
+            }
+
+            $parcelData['shipment'] = [
+                'id' => $shippingMethodId,
+            ];
         }
 
         return $parcelData;
