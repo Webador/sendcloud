@@ -1,11 +1,11 @@
-# SendCloud
+# Sendcloud
 
 [![CircleCI](https://circleci.com/gh/JouwWeb/sendcloud.svg?style=svg)](https://circleci.com/gh/JouwWeb/sendcloud)
 
-This is a PHP library that provides a simple way to communicate with the SendCloud API. It was created because there
-were no simple alternatives that follow good object-oriented code practices. 
+This is a PHP library that provides a simple way to communicate with the Sendcloud API. It was created because there
+were no simple alternatives that follow good object-oriented code practices.
 
-> NOTE: This library does not implement all SendCloud API functionality. If you require functionality that is missing
+> NOTE: This library does not implement all Sendcloud API functionality. If you require functionality that is missing
 please request it through a GitHub issue or pull request.
 
 ## Example
@@ -42,7 +42,7 @@ try {
         8, // Shipping method ID
         null // Default sender address
     );
-    
+
     $pdf = $client->getLabelPdf($parcel, Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT);
 
     var_dump($parcel, $pdf);

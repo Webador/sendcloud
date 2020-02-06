@@ -19,7 +19,7 @@ use JouwWeb\SendCloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * Client to perform calls on the SendCloud API.
+ * Client to perform calls on the Sendcloud API.
  */
 class Client
 {
@@ -67,7 +67,7 @@ class Client
     }
 
     /**
-     * Fetches basic details about the SendCloud account.
+     * Fetches basic details about the Sendcloud account.
      *
      * @return User
      * @throws SendCloudRequestException
@@ -77,12 +77,12 @@ class Client
         try {
             return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'An error occurred while fetching the SendCloud user.');
+            throw $this->parseRequestException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
     }
 
     /**
-     * Fetches available SendCloud shipping methods.
+     * Fetches available Sendcloud shipping methods.
      *
      * @param int|null $servicePointId If passed, only shipping methods to the service point will be returned.
      * @return ShippingMethod[]
@@ -119,19 +119,19 @@ class Client
         } catch (RequestException $exception) {
             throw $this->parseRequestException(
                 $exception,
-                'An error occurred while fetching shipping methods from the SendCloud API.'
+                'An error occurred while fetching shipping methods from the Sendcloud API.'
             );
         }
     }
 
     /**
-     * Creates a parcel in SendCloud.
+     * Creates a parcel in Sendcloud.
      *
      * @param Address $shippingAddress Address to be shipped to.
      * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
      * still required as it will be printed on the label.
      * @param string|null $orderNumber
-     * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
+     * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
      * @param string|null $customsInvoiceNumber
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
@@ -170,7 +170,7 @@ class Client
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel in SendCloud.');
+            throw $this->parseRequestException($exception, 'Could not create parcel in Sendcloud.');
         }
     }
 
@@ -216,7 +216,7 @@ class Client
      *
      * @param Parcel|int $parcel
      * @param int $shippingMethodId
-     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @return Parcel
      * @throws SendCloudRequestException
@@ -246,7 +246,7 @@ class Client
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel with SendCloud.');
+            throw $this->parseRequestException($exception, 'Could not create parcel with Sendcloud.');
         }
     }
 

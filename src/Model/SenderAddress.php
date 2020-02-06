@@ -108,7 +108,7 @@ class SenderAddress
     }
 
     /**
-     * Returns a one-line description similar to how SendCloud displays a sender address.
+     * Returns a one-line description similar to how Sendcloud displays a sender address.
      *
      * @return string
      */
