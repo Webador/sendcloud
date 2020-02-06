@@ -2,6 +2,7 @@
 
 namespace JouwWeb\SendCloud;
 
+use JouwWeb\SendCloud\Model\ParcelItem;
 use function GuzzleHttp\default_user_agent;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
@@ -131,6 +132,9 @@ class Client
      * still required as it will be printed on the label.
      * @param string|null $orderNumber
      * @param int|null $weight Weight of the parcel in grams. The default set in SendCloud will be used if null or zero.
+     * @param string|null $customsInvoiceNumber
+     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param ParcelItem[]|null $items Items contained in the parcel.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -138,7 +142,10 @@ class Client
         Address $shippingAddress,
         ?int $servicePointId,
         ?string $orderNumber = null,
-        ?int $weight = null
+        ?int $weight = null,
+        ?string $customsInvoiceNumber = null,
+        ?int $customsShipmentType = null,
+        ?array $items = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             null,
@@ -148,7 +155,10 @@ class Client
             $weight,
             false,
             null,
-            null
+            null,
+            $customsInvoiceNumber,
+            $customsShipmentType,
+            $items
         );
 
         try {
@@ -163,6 +173,8 @@ class Client
             throw $this->parseRequestException($exception, 'Could not create parcel in SendCloud.');
         }
     }
+
+    // TODO: ??? public function createInternationalParcel(
 
     /**
      * Update details of an existing parcel.
@@ -181,6 +193,9 @@ class Client
             null,
             null,
             false,
+            null,
+            null,
+            null,
             null,
             null
         );
@@ -218,7 +233,10 @@ class Client
             null,
             true,
             $shippingMethodId,
-            $senderAddress
+            $senderAddress,
+            null,
+            null,
+            null
         );
 
         try {
@@ -424,6 +442,9 @@ class Client
      * @param int|null $shippingMethodId Required if requesting a label.
      * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
+     * @param string|null $customsInvoiceNumber
+     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param ParcelItem[]|null $items
      * @return mixed[]
      */
     protected function getParcelData(
@@ -434,7 +455,10 @@ class Client
         ?int $weight,
         bool $requestLabel,
         ?int $shippingMethodId,
-        $senderAddress
+        $senderAddress,
+        ?string $customsInvoiceNumber,
+        ?int $customsShipmentType,
+        ?array $items
     ): array {
         $parcelData = [];
 
@@ -465,7 +489,7 @@ class Client
         }
 
         if ($weight) {
-            $parcelData['weight'] = ceil($weight / 1000);
+            $parcelData['weight'] = (string)($weight / 1000);
         }
 
         if (!$requestLabel) {
@@ -512,6 +536,47 @@ class Client
         $parcelData['shipment'] = [
             'id' => $shippingMethodId,
         ];
+
+        // Customs
+        if ($customsInvoiceNumber) {
+            $parcelData['customs_invoice_nr'] = $customsInvoiceNumber;
+        }
+        if ($customsShipmentType !== null) {
+            if (!in_array($customsShipmentType, Parcel::CUSTOMS_SHIPMENT_TYPES)) {
+                throw new \InvalidArgumentException(sprintf('Invalid customs shipment type %s.', $customsShipmentType));
+            }
+
+            $parcelData['customs_shipment_type'] = $customsShipmentType;
+        }
+
+        if ($items) {
+            $itemsData = [];
+
+            foreach (array_values($items) as $index => $item) {
+                if (!($item instanceof ParcelItem)) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Parcel item at index %s is not an instance of ParcelItem.',
+                        $index
+                    ));
+                }
+
+                $itemData = [
+                    'description' => $item->getDescription(),
+                    'quantity' => $item->getQuantity(),
+                    'weight' => (string)($item->getWeight() / 1000),
+                    'value' => $item->getValue(),
+                ];
+                if ($item->getHarmonizedSystemCode()) {
+                    $itemData['hs_code'] = $item->getHarmonizedSystemCode();
+                }
+                if ($item->getOriginCountryCode()) {
+                    $itemData['origin_country'] = $item->getOriginCountryCode();
+                }
+                $itemsData[] = $itemData;
+            }
+
+            $parcelData['parcel_items'] = $itemsData;
+        }
 
         return $parcelData;
     }

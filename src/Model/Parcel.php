@@ -73,6 +73,19 @@ class Parcel
         self::STATUS_SUBMITTING_CANCELLATION_REQUEST,
     ];
 
+    public const CUSTOMS_SHIPMENT_TYPE_GIFT = 0;
+    public const CUSTOMS_SHIPMENT_TYPE_DOCUMENTS = 1;
+    public const CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS = 2;
+    public const CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_SAMPLE = 3;
+    public const CUSTOMS_SHIPMENT_TYPE_RETURNED_GOODS = 4;
+    public const CUSTOMS_SHIPMENT_TYPES = [
+        self::CUSTOMS_SHIPMENT_TYPE_GIFT,
+        self::CUSTOMS_SHIPMENT_TYPE_DOCUMENTS,
+        self::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS,
+        self::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_SAMPLE,
+        self::CUSTOMS_SHIPMENT_TYPE_RETURNED_GOODS,
+    ];
+
     /** @var \DateTime */
     protected $created;
 
@@ -111,6 +124,15 @@ class Parcel
 
     /** @var int|null */
     protected $servicePointId;
+
+    /** @var string|null */
+    protected $customsInvoiceNumber;
+
+    /** @var int|null */
+    protected $customsShipmentType;
+
+    /** @var ParcelItem[] */
+    protected $items = [];
 
     public function __construct(array $data)
     {
@@ -162,6 +184,20 @@ class Parcel
 
         if (isset($data['to_service_point'])) {
             $this->servicePointId = (int)$data['to_service_point'];
+        }
+
+        if (isset($data['customs_invoice_nr'])) {
+            $this->customsInvoiceNumber = (string)$data['customs_invoice_nr'];
+        }
+
+        if (isset($data['customs_shipment_type'])) {
+            $this->customsShipmentType = (int)$data['customs_shipment_type'];
+        }
+
+        if (isset($data['parcel_items'])) {
+            foreach ((array)$data['parcel_items'] as $itemData) {
+                $this->items[] = ParcelItem::createFromData($itemData);
+            }
         }
     }
 
@@ -235,6 +271,24 @@ class Parcel
         return $this->servicePointId;
     }
 
+    public function getCustomsInvoiceNumber(): ?string
+    {
+        return $this->customsInvoiceNumber;
+    }
+
+    public function getCustomsShipmentType(): ?int
+    {
+        return $this->customsShipmentType;
+    }
+
+    /**
+     * @return ParcelItem[]
+     */
+    public function getItems(): array
+    {
+        return $this->items;
+    }
+
     public function toArray(): array
     {
         return [
@@ -242,7 +296,7 @@ class Parcel
             'carrier' => $this->getCarrier(),
             'created' => $this->getCreated()->format(DATE_ISO8601),
             'id' => $this->getId(),
-            'labels' => array_map(function ($format) {
+            'labels' => array_map(function (int $format): string {
                 return $this->getLabelUrl($format);
             }, self::LABEL_FORMATS),
             'orderNumber' => $this->getOrderNumber(),
@@ -253,6 +307,11 @@ class Parcel
             'trackingNumber' => $this->getTrackingNumber(),
             'trackingUrl' => $this->getTrackingUrl(),
             'weight' => $this->getWeight(),
+            'customsInvoiceNumber' => $this->getCustomsInvoiceNumber(),
+            'customsShipmentType' => $this->getCustomsShipmentType(),
+            'items' => array_map(function (ParcelItem $item): array {
+                return $item->toArray();
+            }, $this->getItems()),
         ];
     }
 
