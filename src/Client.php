@@ -85,20 +85,19 @@ class Client
      * Fetches available Sendcloud shipping methods.
      *
      * @param int|null $servicePointId If passed, only shipping methods to the service point will be returned.
+     * @param arguments If passed, extra arguments can be added
      * @return ShippingMethod[]
      * @throws SendCloudClientException
      */
-    public function getShippingMethods(?int $servicePointId = null): array
+    public function getShippingMethods(?int $servicePointId = null, $arguments = []): array
     {
         try {
-            $queryData = [];
-
             if ($servicePointId !== null) {
-                $queryData['service_point_id'] = $servicePointId;
+                $arguments['service_point_id'] = $servicePointId;
             }
 
             $response = $this->guzzleClient->get('shipping_methods', [
-                'query' => $queryData,
+                'query' => $arguments,
             ]);
             $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
