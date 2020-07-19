@@ -296,7 +296,7 @@ class Parcel
             'carrier' => $this->getCarrier(),
             'created' => $this->getCreated()->format(DATE_ISO8601),
             'id' => $this->getId(),
-            'labels' => array_map(function (int $format): string {
+            'labels' => array_map(function (int $format): ?string {
                 return $this->getLabelUrl($format);
             }, self::LABEL_FORMATS),
             'orderNumber' => $this->getOrderNumber(),
