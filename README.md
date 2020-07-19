@@ -1,7 +1,5 @@
 # Sendcloud
 
-[![CircleCI](https://circleci.com/gh/JouwWeb/sendcloud.svg?style=svg)](https://circleci.com/gh/JouwWeb/sendcloud)
-
 This is a PHP library that provides a simple way to communicate with the Sendcloud API. It was created because there
 were no simple alternatives that follow good object-oriented code practices.
 
