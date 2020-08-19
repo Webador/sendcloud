@@ -31,6 +31,9 @@ class Address
     /** @var string|null */
     protected $phoneNumber;
 
+    /** @var string|null */
+    private $addressLine2;
+
     public function __construct(
         string $name,
         ?string $companyName,
@@ -40,7 +43,8 @@ class Address
         string $postalCode,
         string $countryCode,
         string $emailAddress,
-        ?string $phoneNumber
+        ?string $phoneNumber = null,
+        ?string $addressLine2 = null
     ) {
         $this->name = $name;
         $this->companyName = $companyName;
@@ -51,6 +55,7 @@ class Address
         $this->countryCode = $countryCode;
         $this->emailAddress = $emailAddress;
         $this->phoneNumber = $phoneNumber;
+        $this->addressLine2 = $addressLine2;
     }
 
     public function getName(): string
@@ -141,6 +146,16 @@ class Address
     public function setPhoneNumber(?string $phoneNumber): void
     {
         $this->phoneNumber = $phoneNumber;
+    }
+
+    public function getAddressLine2(): ?string
+    {
+        return $this->addressLine2;
+    }
+
+    public function setAddressLine2(?string $addressLine2): void
+    {
+        $this->addressLine2 = $addressLine2;
     }
 
     public function getDisplayName(): string
