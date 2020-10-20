@@ -476,6 +476,7 @@ class Client
                 'country' => $shippingAddress->getCountryCode(),
                 'email' => $shippingAddress->getEmailAddress(),
                 'telephone' => $shippingAddress->getPhoneNumber() ?? '',
+                'country_state' => $shippingAddress->getCountryStateCode() ?? '',
             ]);
         }
 
