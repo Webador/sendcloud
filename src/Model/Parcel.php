@@ -152,7 +152,9 @@ class Parcel
             (string)$data['postal_code'],
             (string)$data['country']['iso_2'],
             (string)$data['email'],
-            (string)$data['telephone']
+            (string)$data['telephone'],
+            (string)$data['address_2'],
+            (string)$data['to_state']
         );
 
         if (isset($data['tracking_url'])) {
