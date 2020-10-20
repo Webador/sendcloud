@@ -1,5 +1,5 @@
 {
-    "name": "jouwweb/sendcloud",
+    "name": "slonline/sendcloud",
     "description": "Provides a client to interact with the Sendcloud API in an object-oriented way.",
     "keywords": [
         "sendcloud",
@@ -15,6 +15,10 @@
         {
             "name": "Sjoerd Nuijten",
             "email": "sjoerd@jouwweb.nl"
+        },
+        {
+            "name": "Lubos Odraska",
+            "email": "odraska@slonline.sk"
         }
     ],
     "autoload": {
