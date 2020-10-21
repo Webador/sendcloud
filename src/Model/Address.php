@@ -25,7 +25,7 @@ class Address
     /** @var string */
     protected $countryCode;
 
-    /** @var string */
+    /** @var string|null */
     protected $countryStateCode;
 
     /** @var string */
@@ -163,12 +163,12 @@ class Address
         $this->addressLine2 = $addressLine2;
     }
 
-    public function getCountryStateCode(): string
+    public function getCountryStateCode(): ?string
     {
         return $this->countryStateCode;
     }
 
-    public function setCountryStateCode(string $countryStateCode): void
+    public function setCountryStateCode(?string $countryStateCode): void
     {
         $this->countryStateCode = $countryStateCode;
     }
