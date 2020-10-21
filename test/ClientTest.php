@@ -97,11 +97,11 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
         ));
 
         $parcel = $this->client->createParcel(
-            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', null),
+            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
             null,
             '201900001',
             2486
@@ -117,6 +117,8 @@ class ClientTest extends TestCase
         $this->assertEquals(2486, $parcel->getWeight());
         $this->assertEquals('201900001', $parcel->getOrderNumber());
         $this->assertNull($parcel->getShippingMethodId());
+        $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
+        $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
     }
 
     public function testCreateParcelCustoms(): void
@@ -126,7 +128,7 @@ class ClientTest extends TestCase
                 $this->assertEquals([
                     'post',
                     'parcels',
-                    ['json' => ['parcel' => ['name' => 'Dr. Coffee', 'company_name' => '', 'address' => 'Street', 'house_number' => '123', 'address_2' => 'Unit 83', 'city' => 'Place', 'postal_code' => '7837', 'country' => 'BM', 'email' => 'drcoffee@drcoffee.dr', 'telephone' => '', 'customs_invoice_nr' => 'customsInvoiceNumber', 'customs_shipment_type' => 2, 'parcel_items' => [0 => ['description' => 'green tea', 'quantity' => 1, 'weight' => '0.123', 'value' => 15.2, 'hs_code' => '090210', 'origin_country' => 'EC'], 1 => ['description' => 'cardboard', 'quantity' => 3, 'weight' => '0.05','value' => 0.2, 'hs_code' => '090210', 'origin_country' => 'NL']]]]],
+                    ['json' => ['parcel' => ['name' => 'Dr. Coffee', 'company_name' => '', 'address' => 'Street', 'house_number' => '123', 'address_2' => 'Unit 83', 'city' => 'Place', 'postal_code' => '7837', 'country' => 'BM', 'email' => 'drcoffee@drcoffee.dr', 'telephone' => '', 'country_state' => '', 'customs_invoice_nr' => 'customsInvoiceNumber', 'customs_shipment_type' => 2, 'parcel_items' => [0 => ['description' => 'green tea', 'quantity' => 1, 'weight' => '0.123', 'value' => 15.2, 'hs_code' => '090210', 'origin_country' => 'EC'], 1 => ['description' => 'cardboard', 'quantity' => 3, 'weight' => '0.05','value' => 0.2, 'hs_code' => '090210', 'origin_country' => 'NL']]]]],
                 ], func_get_args());
 
                 return new Response(200, [], '{"parcel":{"id":36054805,"address":"Street 123","address_2":"Unit 83","address_divided":{"house_number":"123","street":"Street"},"city":"Place","company_name":"","country":{"iso_2":"BM","iso_3":"BMU","name":"Bermuda"},"data":{},"date_created":"06-02-2020 21:33:13","email":"drcoffee@drcoffee.dr","name":"Dr. Coffee","postal_code":"7837","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"1.000","label":{},"customs_declaration":{},"order_number":"","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"customsInvoiceNumber","customs_shipment_type":2,"parcel_items":[{"description":"cardboard","quantity":3,"weight":"0.050","value":"0.20","hs_code":"090210","origin_country":"NL","product_id":"","properties":{},"sku":"","return_reason":null,"return_message":null},{"description":"green tea","quantity":1,"weight":"0.123","value":"15.20","hs_code":"090210","origin_country":"EC","product_id":"","properties":{},"sku":"","return_reason":null,"return_message":null}],"documents":[],"type":null,"shipment_uuid":"f893c98c-43a6-49bb-9dda-9bf3e76a87ad","shipping_method":null,"external_order_id":"36054805","external_shipment_id":"","external_reference":null,"is_return":false,"note":""}}');
@@ -166,17 +168,17 @@ class ClientTest extends TestCase
                 $this->assertEquals([
                     'put',
                     'parcels',
-                    ['json' => ['parcel' => ['id' => 8293794, 'name' => 'Completely different person', 'company_name' => 'Some company', 'address' => 'Rosebud', 'address_2' => 'Above the skies', 'house_number' => '2134A', 'city' => 'Almanda', 'postal_code' => '9238DD', 'country' => 'NL', 'email' => 'completelydifferent@email.com', 'telephone' => '+31699999999']]]
+                    ['json' => ['parcel' => ['id' => 8293794, 'name' => 'Completely different person', 'company_name' => 'Some company', 'address' => 'Rosebud', 'address_2' => 'Above the skies', 'house_number' => '2134A', 'city' => 'Almanda', 'postal_code' => '9238DD', 'country' => 'NL', 'email' => 'completelydifferent@email.com', 'telephone' => '+31699999999', 'country_state' => 'CS']]]
                 ], func_get_args());
 
                 return new Response(
                     200,
                     [],
-                    '{"parcel":{"id":8293794,"address":"Rosebud 2134A","address_2":"Above the skies","address_divided":{"street":"Rosebud","house_number":"2134"},"city":"Almanda","company_name":"Some company","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"completelydifferent@email.com","name":"Completely different person","postal_code":"9238DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"+31699999999","tracking_number":"","weight":"2.490","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
+                    '{"parcel":{"id":8293794,"address":"Rosebud 2134A","address_2":"Above the skies","address_divided":{"street":"Rosebud","house_number":"2134"},"city":"Almanda","company_name":"Some company","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"completelydifferent@email.com","name":"Completely different person","postal_code":"9238DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"+31699999999","tracking_number":"","weight":"2.490","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CS","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
                 );
             });
 
-        $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', '2134A', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '+31699999999', 'Above the skies'));
+        $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', '2134A', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '+31699999999', 'Above the skies', 'CS'));
 
         $this->assertEquals('Some company', $parcel->getAddress()->getCompanyName());
     }
