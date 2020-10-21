@@ -25,6 +25,9 @@ class Address
     /** @var string */
     protected $countryCode;
 
+    /** @var string|null */
+    protected $countryStateCode;
+
     /** @var string */
     protected $emailAddress;
 
@@ -44,7 +47,8 @@ class Address
         string $countryCode,
         string $emailAddress,
         ?string $phoneNumber = null,
-        ?string $addressLine2 = null
+        ?string $addressLine2 = null,
+        ?string $countryStateCode = null
     ) {
         $this->name = $name;
         $this->companyName = $companyName;
@@ -56,6 +60,7 @@ class Address
         $this->emailAddress = $emailAddress;
         $this->phoneNumber = $phoneNumber;
         $this->addressLine2 = $addressLine2;
+        $this->countryStateCode = $countryStateCode;
     }
 
     public function getName(): string
@@ -158,6 +163,16 @@ class Address
         $this->addressLine2 = $addressLine2;
     }
 
+    public function getCountryStateCode(): ?string
+    {
+        return $this->countryStateCode;
+    }
+
+    public function setCountryStateCode(?string $countryStateCode): void
+    {
+        $this->countryStateCode = $countryStateCode;
+    }
+
     public function getDisplayName(): string
     {
         $displayName = $this->getName();
@@ -182,6 +197,7 @@ class Address
             'phoneNumber' => $this->getPhoneNumber(),
             'postalCode' => $this->getPostalCode(),
             'street' => $this->getStreet(),
+            'countryStateCode' => $this->getCountryStateCode(),
         ];
     }
 
