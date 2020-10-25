@@ -35,7 +35,7 @@ class Address
     protected $phoneNumber;
 
     /** @var string|null */
-    private $addressLine2;
+    protected $addressLine2;
 
     public function __construct(
         string $name,
