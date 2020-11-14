@@ -126,7 +126,7 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')
             ->willReturnCallback(function () {
                 $this->assertEquals([
-                    'post',
+                    'POST',
                     'parcels',
                     ['json' => ['parcel' => ['name' => 'Dr. Coffee', 'company_name' => '', 'address' => 'Street', 'house_number' => '123', 'address_2' => 'Unit 83', 'city' => 'Place', 'postal_code' => '7837', 'country' => 'BM', 'email' => 'drcoffee@drcoffee.dr', 'telephone' => '', 'country_state' => '', 'customs_invoice_nr' => 'customsInvoiceNumber', 'customs_shipment_type' => 2, 'parcel_items' => [0 => ['description' => 'green tea', 'quantity' => 1, 'weight' => '0.123', 'value' => 15.2, 'hs_code' => '090210', 'origin_country' => 'EC'], 1 => ['description' => 'cardboard', 'quantity' => 3, 'weight' => '0.05','value' => 0.2, 'hs_code' => '090210', 'origin_country' => 'NL']]]]],
                 ], func_get_args());
@@ -166,7 +166,7 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')
             ->willReturnCallback(function () {
                 $this->assertEquals([
-                    'put',
+                    'PUT',
                     'parcels',
                     ['json' => ['parcel' => ['id' => 8293794, 'name' => 'Completely different person', 'company_name' => 'Some company', 'address' => 'Rosebud', 'address_2' => 'Above the skies', 'house_number' => '2134A', 'city' => 'Almanda', 'postal_code' => '9238DD', 'country' => 'NL', 'email' => 'completelydifferent@email.com', 'telephone' => '+31699999999', 'country_state' => 'CS']]]
                 ], func_get_args());

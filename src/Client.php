@@ -2,16 +2,17 @@
 
 namespace JouwWeb\SendCloud;
 
-use JouwWeb\SendCloud\Model\ParcelItem;
-use function GuzzleHttp\default_user_agent;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\Utils;
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Exception\SendCloudStateException;
 use JouwWeb\SendCloud\Exception\SendCloudWebhookException;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
+use JouwWeb\SendCloud\Model\ParcelItem;
 use JouwWeb\SendCloud\Model\SenderAddress;
 use JouwWeb\SendCloud\Model\ShippingMethod;
 use JouwWeb\SendCloud\Model\User;
@@ -55,7 +56,7 @@ class Client
                 $secretKey,
             ],
             'headers' => [
-                'User-Agent' => 'jouwweb/sendcloud ' . default_user_agent(),
+                'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
             ],
         ];
 
@@ -76,8 +77,8 @@ class Client
     {
         try {
             return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'An error occurred while fetching the Sendcloud user.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
     }
 
@@ -116,8 +117,8 @@ class Client
             });
 
             return $shippingMethods;
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException(
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException(
                 $exception,
                 'An error occurred while fetching shipping methods from the Sendcloud API.'
             );
@@ -169,8 +170,8 @@ class Client
             ]);
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel in Sendcloud.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
         }
     }
 
@@ -206,8 +207,8 @@ class Client
             ]);
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not update parcel in SendCloud.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not update parcel in SendCloud.');
         }
     }
 
@@ -245,8 +246,8 @@ class Client
             ]);
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not create parcel with Sendcloud.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not create parcel with Sendcloud.');
         }
     }
 
@@ -262,15 +263,18 @@ class Client
         try {
             $this->guzzleClient->post(sprintf('parcels/%s/cancel', $this->parseParcelArgument($parcel)));
             return true;
-        } catch (RequestException $exception) {
-            $statusCode = $exception->hasResponse() ? $exception->getResponse()->getStatusCode() : 0;
+        } catch (TransferException $exception) {
+            $statusCode = ($exception instanceof RequestException && $exception->hasResponse()
+                ? $exception->getResponse()->getStatusCode()
+                : 0
+            );
 
             // Handle documented rejections
             if (in_array($statusCode, [400, 410])) {
                 return false;
             }
 
-            throw $this->parseRequestException($exception, 'An error occurred while cancelling the parcel.');
+            throw $this->parseGuzzleException($exception, 'An error occurred while cancelling the parcel.');
         }
     }
 
@@ -302,8 +306,8 @@ class Client
 
         try {
             return (string)$this->guzzleClient->get($labelUrl)->getBody();
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve label.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve label.');
         }
     }
 
@@ -337,8 +341,8 @@ class Client
                     ]
                 ],
             ]);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve label information.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve label information.');
         }
 
         $labelData = json_decode((string)$response->getBody(), true);
@@ -349,8 +353,8 @@ class Client
 
         try {
             return (string)$this->guzzleClient->get($labelUrl)->getBody();
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve label PDF data.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve label PDF data.');
         }
     }
 
@@ -369,8 +373,8 @@ class Client
             return array_map(function (array $senderAddressData) {
                 return new SenderAddress($senderAddressData);
             }, $senderAddressesData);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve sender addresses.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve sender addresses.');
         }
     }
 
@@ -386,8 +390,8 @@ class Client
         try {
             $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (RequestException $exception) {
-            throw $this->parseRequestException($exception, 'Could not retrieve parcel.');
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve parcel.');
         }
     }
 
@@ -579,8 +583,8 @@ class Client
         return $parcelData;
     }
 
-    protected function parseRequestException(
-        RequestException $exception,
+    protected function parseGuzzleException(
+        TransferException $exception,
         string $defaultMessage
     ): SendCloudRequestException {
         $message = $defaultMessage;
@@ -588,7 +592,7 @@ class Client
 
         $responseCode = null;
         $responseMessage = null;
-        if ($exception->hasResponse()) {
+        if ($exception instanceof RequestException && $exception->hasResponse()) {
             $responseData = json_decode((string)$exception->getResponse()->getBody(), true);
             $responseCode = $responseData['error']['code'] ?? null;
             $responseMessage = $responseData['error']['message'] ?? null;
