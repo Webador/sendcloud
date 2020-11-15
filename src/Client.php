@@ -216,13 +216,13 @@ class Client
      * Request a label for an existing parcel.
      *
      * @param Parcel|int $parcel
-     * @param int $shippingMethodId
+     * @param ShippingMethod|int $shippingMethod
      * @param SenderAddress|int|Address|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @return Parcel
      * @throws SendCloudRequestException
      */
-    public function createLabel($parcel, int $shippingMethodId, $senderAddress): Parcel
+    public function createLabel($parcel, $shippingMethod, $senderAddress): Parcel
     {
         $parcelData = $this->getParcelData(
             $this->parseParcelArgument($parcel),
@@ -231,7 +231,7 @@ class Client
             null,
             null,
             true,
-            $shippingMethodId,
+            $shippingMethod,
             $senderAddress,
             null,
             null,
@@ -441,7 +441,7 @@ class Client
      * @param string|null $orderNumber
      * @param int|null $weight
      * @param bool $requestLabel
-     * @param int|null $shippingMethodId Required if requesting a label.
+     * @param ShippingMethod|int|null $shippingMethod Required if requesting a label.
      * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @param string|null $customsInvoiceNumber
@@ -456,7 +456,7 @@ class Client
         ?string $orderNumber,
         ?int $weight,
         bool $requestLabel,
-        ?int $shippingMethodId,
+        $shippingMethod,
         $senderAddress,
         ?string $customsInvoiceNumber,
         ?int $customsShipmentType,
@@ -569,14 +569,17 @@ class Client
             }
 
             // Shipping method
-            if (!$shippingMethodId) {
+            if ($shippingMethod instanceof ShippingMethod) {
+                $shippingMethod = $shippingMethod->getId();
+            }
+            if (!is_int($shippingMethod)) {
                 throw new \InvalidArgumentException(
-                    '$shippingMethodId must be passed when requesting a label.'
+                    '$shippingMethod must be an integer or ShippingMethod instance when requesting a label.'
                 );
             }
 
             $parcelData['shipment'] = [
-                'id' => $shippingMethodId,
+                'id' => $shippingMethod,
             ];
         }
 
