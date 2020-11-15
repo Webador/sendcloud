@@ -57,11 +57,21 @@ class ClientTest extends TestCase
 
     public function testGetShippingMethods(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '{"shipping_methods": [{"service_point_input": "none","max_weight": "1.000","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
-        ));
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+            $this->assertEquals([
+                'GET',
+                'shipping_methods',
+                ['query' => [
+                    'sender_address' => 'all',
+                ]],
+            ], func_get_args());
+
+            return new Response(
+                200,
+                [],
+                '{"shipping_methods": [{"service_point_input": "none","max_weight": "1.000","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
+            );
+        });
 
         $shippingMethods = $this->client->getShippingMethods();
 
@@ -74,6 +84,29 @@ class ClientTest extends TestCase
         $this->assertEquals(420, $shippingMethods[0]->getPriceForCountry('NL'));
         $this->assertNull($shippingMethods[0]->getPriceForCountry('EN'));
         $this->assertFalse($shippingMethods[0]->getAllowsServicePoints());
+    }
+
+    public function testGetShippingMethodsOptionalArguments(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+            $this->assertEquals([
+                'GET',
+                'shipping_methods',
+                ['query' => [
+                    'service_point_id' => 10,
+                    'sender_address' => 11,
+                    'is_return' => 'true',
+                ]],
+            ], func_get_args());
+
+            return new Response(
+                200,
+                [],
+                '{"shipping_methods": [{"service_point_input": "none","max_weight": "1.000","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
+            );
+        });
+
+        $this->client->getShippingMethods(10, 11, true);
     }
 
     public function testGetSenderAddresses(): void

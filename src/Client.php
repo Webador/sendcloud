@@ -50,7 +50,7 @@ class Client
 
         $clientConfig = [
             'base_uri' => $apiBaseUrl ?: self::API_BASE_URL,
-            'timeout' => 15,
+            'timeout' => 60, // Mainly because the shipping methods endpoint can take a very long time to respond.
             'auth' => [
                 $publicKey,
                 $secretKey,
@@ -85,17 +85,41 @@ class Client
     /**
      * Fetches available Sendcloud shipping methods.
      *
-     * @param int|null $servicePointId If passed, only shipping methods to the service point will be returned.
+     * @param int|null $servicePointId When passed, only methods able to ship to the service point will be returned.
+     * @param SenderAddress|int|null $senderAddress The sender address to ship from. Methods available to all of your
+     * account's sender addresses will be retrieved when null.
+     * @param bool $returnMethodsOnly When true, methods for making a return are returned instead.
      * @return ShippingMethod[]
      * @throws SendCloudClientException
      */
-    public function getShippingMethods(?int $servicePointId = null): array
-    {
+    public function getShippingMethods(
+        ?int $servicePointId = null,
+        $senderAddress = null,
+        bool $returnMethodsOnly = false
+    ): array {
         try {
             $queryData = [];
 
             if ($servicePointId !== null) {
                 $queryData['service_point_id'] = $servicePointId;
+            }
+
+            if ($senderAddress !== null) {
+                if ($senderAddress instanceof SenderAddress) {
+                    $senderAddress = $senderAddress->getId();
+                }
+                if (!is_int($senderAddress)) {
+                    throw new \InvalidArgumentException(
+                        '$senderAddress must be an integer or SenderAddress when passed.'
+                    );
+                }
+            } else {
+                $senderAddress = 'all';
+            }
+            $queryData['sender_address'] = $senderAddress;
+
+            if ($returnMethodsOnly) {
+                $queryData['is_return'] = 'true';
             }
 
             $response = $this->guzzleClient->get('shipping_methods', [
