@@ -517,7 +517,7 @@ class Client
         }
 
         if ($weight) {
-            $parcelData['weight'] = (string)($weight / 1000);
+            $parcelData['weight'] = (string) round($weight / 1000);
         }
 
         if ($customsInvoiceNumber) {
