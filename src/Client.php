@@ -517,7 +517,7 @@ class Client
         }
 
         if ($weight) {
-            $parcelData['weight'] = (string)($weight / 1000);
+            $parcelData['weight'] = number_format($weight / 1000, 3);
         }
 
         if ($customsInvoiceNumber) {
@@ -546,7 +546,7 @@ class Client
                 $itemData = [
                     'description' => $item->getDescription(),
                     'quantity' => $item->getQuantity(),
-                    'weight' => (string)($item->getWeight() / 1000),
+                    'weight' => number_format($item->getWeight() / 1000, 3),
                     'value' => $item->getValue(),
                 ];
                 if ($item->getHarmonizedSystemCode()) {
