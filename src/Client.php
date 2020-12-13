@@ -555,6 +555,15 @@ class Client
                 if ($item->getOriginCountryCode()) {
                     $itemData['origin_country'] = $item->getOriginCountryCode();
                 }
+                if ($item->getSku()) {
+                    $itemData['sku'] = $item->getSku();
+                }
+                if ($item->getProductId()) {
+                    $itemData['product_id'] = $item->getProductId();
+                }
+                if ($item->getProperties()) {
+                    $itemData['properties'] = $item->getProperties();
+                }
                 $itemsData[] = $itemData;
             }
 
