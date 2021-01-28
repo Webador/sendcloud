@@ -160,6 +160,7 @@ class Client
      * @param string|null $customsInvoiceNumber
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
+     * @param string|null $postNumber Number that may be required to send to a service point.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -170,7 +171,8 @@ class Client
         ?int $weight = null,
         ?string $customsInvoiceNumber = null,
         ?int $customsShipmentType = null,
-        ?array $items = null
+        ?array $items = null,
+        ?string $postNumber = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             null,
@@ -183,7 +185,8 @@ class Client
             null,
             $customsInvoiceNumber,
             $customsShipmentType,
-            $items
+            $items,
+            $postNumber
         );
 
         try {
@@ -216,6 +219,7 @@ class Client
             null,
             null,
             false,
+            null,
             null,
             null,
             null,
@@ -257,6 +261,7 @@ class Client
             true,
             $shippingMethod,
             $senderAddress,
+            null,
             null,
             null,
             null
@@ -471,6 +476,7 @@ class Client
      * @param string|null $customsInvoiceNumber
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items
+     * @param string|null $postNumber
      * @return mixed[]
      */
     protected function getParcelData(
@@ -484,7 +490,8 @@ class Client
         $senderAddress,
         ?string $customsInvoiceNumber,
         ?int $customsShipmentType,
-        ?array $items
+        ?array $items,
+        ?string $postNumber
     ): array {
         $parcelData = [];
 
@@ -510,6 +517,10 @@ class Client
 
         if ($servicePointId) {
             $parcelData['to_service_point'] = $servicePointId;
+        }
+
+        if ($postNumber) {
+            $parcelData['to_post_number'] = $postNumber;
         }
 
         if ($orderNumber) {
