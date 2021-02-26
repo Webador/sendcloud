@@ -5,7 +5,6 @@ namespace JouwWeb\SendCloud;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
-use GuzzleHttp\Utils;
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Exception\SendCloudStateException;
@@ -56,7 +55,9 @@ class Client
                 $secretKey,
             ],
             'headers' => [
-                'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
+                // Note: We use the deprecated function instead of GuzzleHttp\Utils::defaultUserAgent() to maintain
+                // support for Guzzle 6.
+                'User-Agent' => 'jouwweb/sendcloud ' . \GuzzleHttp\default_user_agent(),
             ],
         ];
 
