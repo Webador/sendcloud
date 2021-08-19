@@ -1,5 +1,5 @@
 {
-    "name": "jouwweb/sendcloud",
+    "name": "retrobak/sendcloud",
     "description": "Provides a client to interact with the Sendcloud API in an object-oriented way.",
     "keywords": [
         "sendcloud",
