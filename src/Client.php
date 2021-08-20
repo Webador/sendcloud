@@ -204,6 +204,61 @@ class Client
     }
 
     /**
+     * @param Address $shippingAddress
+     * @param int|null $servicePointId
+     * @param string|null $orderNumber
+     * @param int|null $weight
+     * @param string|null $customsInvoiceNumber
+     * @param int|null $customsShipmentType
+     * @param array|null $items
+     * @param string|null $postNumber
+     * @param ShippingMethod|int $shippingMethod
+     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick Sendcloud's default. An Address will
+     * @return Parcel
+     * @throws SendCloudRequestException
+     */
+    public function createParcelWithLabel(
+        Address $shippingAddress,
+        ?int $servicePointId,
+        ?string $orderNumber = null,
+        ?int $weight = null,
+        ?string $customsInvoiceNumber = null,
+        ?int $customsShipmentType = null,
+        ?array $items = null,
+        ?string $postNumber = null,
+        $shippingMethod,
+        $senderAddress
+    )
+    {
+        $parcelData = $this->getParcelData(
+            null,
+            $shippingAddress,
+            $servicePointId,
+            $orderNumber,
+            $weight,
+            true,
+            $shippingMethod,
+            $senderAddress,
+            $customsInvoiceNumber,
+            $customsShipmentType,
+            $items,
+            $postNumber
+        );
+
+        try {
+            $response = $this->guzzleClient->post('parcels', [
+                'json' => [
+                    'parcel' => $parcelData,
+                ],
+            ]);
+
+            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
+        }
+    }
+
+    /**
      * Update details of an existing parcel.
      *
      * @param Parcel|int $parcel
