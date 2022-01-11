@@ -9,6 +9,7 @@
         "parcel",
         "webhook"
     ],
+    "homepage": "https://github.com/Webador/sendcloud",
     "type": "library",
     "license": "MIT",
     "authors": [
