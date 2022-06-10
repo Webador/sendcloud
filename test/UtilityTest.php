@@ -3,12 +3,12 @@
 namespace Test\JouwWeb\SendCloud;
 
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Utils;
 use JouwWeb\SendCloud\Client;
 use JouwWeb\SendCloud\Exception\SendCloudWebhookException;
 use JouwWeb\SendCloud\Model\WebhookEvent;
 use JouwWeb\SendCloud\Utility;
 use PHPUnit\Framework\TestCase;
-use function GuzzleHttp\Psr7\stream_for;
 
 class UtilityTest extends TestCase
 {
@@ -26,7 +26,7 @@ class UtilityTest extends TestCase
         $this->addToAssertionCount(1);
 
         try {
-            Utility::verifyWebhookRequest($request->withBody(stream_for(substr($payload, 0, -1))), $secretKey);
+            Utility::verifyWebhookRequest($request->withBody(Utils::streamFor(substr($payload, 0, -1))), $secretKey);
             $this->fail('Invalid request was validated correctly.');
         } catch (SendCloudWebhookException $exception) {
             $this->assertEquals(SendCloudWebhookException::CODE_VERIFICATION_FAILED, $exception->getCode());
