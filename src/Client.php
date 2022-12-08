@@ -237,7 +237,7 @@ class Client
         ?int $customsShipmentType = null,
         ?array $items = null,
         ?string $postNumber = null,
-        ?string $shippingMethod = null,
+        ?ShippingMethod $shippingMethod = null,
         ?string $errors = null,
         int $quantity = 1
     ) : array {
@@ -247,7 +247,7 @@ class Client
             $servicePointId,
             $orderNumber,
             $weight,
-            false,
+            true,
             $shippingMethod,
             null,
             $customsInvoiceNumber,
@@ -255,19 +255,18 @@ class Client
             $items,
             $postNumber
         );
-        $parcelData['quantity'] = $quantity;
 
         try {
             $parcels = [];
 
             $data = [
                 'json' => [
-                    'parcel' => [$parcelData],
+                    'parcels' => [$parcelData],
                 ],
             ];
 
             if(isset($errors)){
-                $data['query'] = ['errors' => 'verbose-carrier'];
+                $data['query'] = ['errors' => $errors];
             }
 
             $response = $this->guzzleClient->post('parcels', $data);
