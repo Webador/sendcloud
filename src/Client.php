@@ -162,6 +162,7 @@ class Client
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
+     * @param string|null One of {@see ShippingMethod::ERRORS_VERBOSE}.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -173,7 +174,8 @@ class Client
         ?string $customsInvoiceNumber = null,
         ?int $customsShipmentType = null,
         ?array $items = null,
-        ?string $postNumber = null
+        ?string $postNumber = null,
+        ?string $errors = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             null,
@@ -191,11 +193,17 @@ class Client
         );
 
         try {
-            $response = $this->guzzleClient->post('parcels', [
+            $data = [
                 'json' => [
                     'parcel' => $parcelData,
                 ],
-            ]);
+            ];
+
+            if(isset($errors)){
+                $data['query'] = ['errors' => 'verbose-carrier'];
+            }
+
+            $response = $this->guzzleClient->post('parcels', $data);
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
@@ -204,7 +212,7 @@ class Client
     }
 
     /**
-     * Creates a parcel in Sendcloud.
+     * Creates a multi-collo parcel in Sendcloud.
      *
      * @param Address $shippingAddress Address to be shipped to.
      * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
@@ -215,6 +223,7 @@ class Client
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
+     * @param string|null One of {@see ShippingMethod::ERRORS_VERBOSE}.
      * @param int $quantity Number of parcels to generate for multi-collo shipment.
      * @return Parcel[]
      * @throws SendCloudRequestException
@@ -228,6 +237,7 @@ class Client
         ?int $customsShipmentType = null,
         ?array $items = null,
         ?string $postNumber = null,
+        ?string $errors = null,
         int $quantity = 1
     ) : array {
         $parcelData = $this->getParcelData(
@@ -249,11 +259,17 @@ class Client
         try {
             $parcels = [];
 
-            $response = $this->guzzleClient->post('parcels', [
+            $data = [
                 'json' => [
-                    'parcels' => [$parcelData],
+                    'parcel' => [$parcelData],
                 ],
-            ]);
+            ];
+
+            if(isset($errors)){
+                $data['query'] = ['errors' => 'verbose-carrier'];
+            }
+
+            $response = $this->guzzleClient->post('parcels', $data);
 
             foreach (json_decode((string)$response->getBody(), true)['parcels'] as $parcel) {
                 $parcels[] = new Parcel($parcel);

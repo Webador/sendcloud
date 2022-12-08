@@ -134,6 +134,9 @@ class Parcel
     /** @var ParcelItem[] */
     protected $items = [];
 
+    /** @var string[] */
+    protected $errors = [];
+
     public function __construct(array $data)
     {
         $this->id = (int)$data['id'];
@@ -199,6 +202,12 @@ class Parcel
         if (isset($data['parcel_items'])) {
             foreach ((array)$data['parcel_items'] as $itemData) {
                 $this->items[] = ParcelItem::createFromData($itemData);
+            }
+        }
+
+        if (isset($data['errors']['non_field_errors'])) {
+            foreach ((array)$data['errors']['non_field_errors'] as $itemData) {
+                $this->errors[] = $itemData;
             }
         }
     }
@@ -289,6 +298,14 @@ class Parcel
     public function getItems(): array
     {
         return $this->items;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getErrors() : array
+    {
+        return $this->errors;
     }
 
     public function toArray(): array
