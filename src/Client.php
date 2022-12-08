@@ -237,6 +237,7 @@ class Client
         ?int $customsShipmentType = null,
         ?array $items = null,
         ?string $postNumber = null,
+        ?string $shippingMethod = null,
         ?string $errors = null,
         int $quantity = 1
     ) : array {
@@ -247,7 +248,7 @@ class Client
             $orderNumber,
             $weight,
             false,
-            null,
+            $shippingMethod,
             null,
             $customsInvoiceNumber,
             $customsShipmentType,
