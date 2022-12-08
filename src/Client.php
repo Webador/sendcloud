@@ -255,6 +255,7 @@ class Client
             $items,
             $postNumber
         );
+        $parcelData['quantity'] = $quantity;
 
         try {
             $parcels = [];

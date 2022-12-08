@@ -11,6 +11,7 @@ use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
 use JouwWeb\SendCloud\Model\ParcelItem;
+use JouwWeb\SendCloud\Model\ShippingMethod;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -174,6 +175,7 @@ class ClientTest extends TestCase
             null,
             null,
             null,
+            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud']),
             null,
             2
         );
