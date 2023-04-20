@@ -202,7 +202,7 @@ class Client
             ];
 
             if(isset($errors)){
-                $data['query'] = ['errors' => 'verbose-carrier'];
+                $data['query'] = ['errors' => $errors];
             }
 
             $response = $this->guzzleClient->post('parcels', $data);
