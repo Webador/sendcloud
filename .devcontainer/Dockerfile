@@ -1,1 +1,0 @@
-FROM mcr.microsoft.com/devcontainers/php:7.4
