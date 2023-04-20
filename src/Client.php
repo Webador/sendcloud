@@ -162,7 +162,8 @@ class Client
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
-     * @param string|null One of {@see ShippingMethod::ERRORS_VERBOSE}.
+     * @param ?ShippingMethod $shippingMethod
+     * @param string|null $errors One of {@see ShippingMethod::ERRORS_VERBOSE}.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -175,6 +176,7 @@ class Client
         ?int $customsShipmentType = null,
         ?array $items = null,
         ?string $postNumber = null,
+        ?ShippingMethod $shippingMethod = null,
         ?string $errors = null
     ): Parcel {
         $parcelData = $this->getParcelData(
@@ -184,7 +186,7 @@ class Client
             $orderNumber,
             $weight,
             false,
-            null,
+            $shippingMethod,
             null,
             $customsInvoiceNumber,
             $customsShipmentType,
@@ -220,11 +222,12 @@ class Client
      * @param string|null $orderNumber
      * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
      * @param string|null $customsInvoiceNumber
-     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
-     * @param string|null One of {@see ShippingMethod::ERRORS_VERBOSE}.
+     * @param ?ShippingMethod $shippingMethod
      * @param int $quantity Number of parcels to generate for multi-collo shipment.
+     * @param string|null $errors One of {@see ShippingMethod::ERRORS_VERBOSE}.
      * @return Parcel[]
      * @throws SendCloudRequestException
      */
