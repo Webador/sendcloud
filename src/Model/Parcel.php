@@ -86,6 +86,17 @@ class Parcel
         self::CUSTOMS_SHIPMENT_TYPE_RETURNED_GOODS,
     ];
 
+    /**
+     * Constants for the 'errors' query parameter for parcel creation
+     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/parcels-and-error-handling#errorsverbose
+     */
+    public const ERROR_VERBOSE = 'verbose';
+    public const ERROR_VERBOSE_CARRIER = 'verbose-carrier';
+    public const ERRORS_VERBOSE = [
+        self::ERROR_VERBOSE,
+        self::ERROR_VERBOSE_CARRIER
+    ];
+
     /** @var \DateTime */
     protected $created;
 
@@ -205,9 +216,9 @@ class Parcel
             }
         }
 
-        if (isset($data['errors']['non_field_errors'])) {
-            foreach ((array)$data['errors']['non_field_errors'] as $itemData) {
-                $this->errors[] = $itemData;
+        if (isset($data['errors'])) {
+            foreach ((array)$data['errors'] as $key => $itemData) {
+                $this->errors[$key] = $itemData;
             }
         }
     }

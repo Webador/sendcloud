@@ -4,14 +4,6 @@ namespace JouwWeb\SendCloud\Model;
 
 class ShippingMethod
 {
-    // Constant for the 'errors' query parameter for parcel creation
-    public const ERROR_VERBOSE = 'verbose';
-    public const ERROR_VERBOSE_CARRIER = 'verbose-carrier';
-    public const ERRORS_VERBOSE = [
-        self::ERROR_VERBOSE,
-        self::ERROR_VERBOSE_CARRIER
-    ];
-
     /** @var int */
     protected $id;
 
