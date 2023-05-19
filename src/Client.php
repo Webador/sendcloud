@@ -282,11 +282,13 @@ class Client
             }
 
             // Retrieve failed parcels
+            /*
             if(isset($json['failed_parcels'])) {
                 foreach ($json['failed_parcels'] as $parcel) {
                     $parcels[] = new Parcel($parcel);
                 }
             }
+            */
             
             return $parcels;
         } catch (TransferException $exception) {

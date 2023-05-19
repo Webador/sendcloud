@@ -236,6 +236,33 @@ class ClientTest extends TestCase
         } 
     }
 
+    public function testCreateMultiParcelWithVerboseError(): void
+    {
+        $parcel_json = '{"name":"Baron van der Zanden","company_name":"","address":"straat","address_2":"CA","house_number":"23","city":"Gehucht","postal_code":"9283DD","country":"NL","email":"baron@vanderzanden.nl","telephone":"Blok 3","country_state":"","order_number":"201900001","weight":"2.486","request_label":true,"shipment":{"id":1},"quantity":2}';
+
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcels": [], "failed_parcels": [{"parcel":'.$parcel_json.', "errors": { "name": ["This field is required."]}}]}'
+        ));
+
+        $parcels = $this->client->createMultiParcel(
+            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            null,
+            '201900001',
+            2486,
+            null,
+            null,
+            null,
+            null,
+            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
+            Parcel::ERROR_VERBOSE,
+            2
+        );
+
+        $this->assertEquals(0, count($parcels));
+    }
+
     public function testCreateParcelCustoms(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')
