@@ -163,7 +163,7 @@ class Client
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
      * @param ?ShippingMethod $shippingMethod
-     * @param string|null $errors One of {@see ShippingMethod::ERRORS_VERBOSE}.
+     * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -227,7 +227,7 @@ class Client
      * @param string|null $postNumber Number that may be required to send to a service point.
      * @param ?ShippingMethod $shippingMethod
      * @param int $quantity Number of parcels to generate for multi-collo shipment.
-     * @param string|null $errors One of {@see ShippingMethod::ERRORS_VERBOSE}.
+     * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel[]
      * @throws SendCloudRequestException
      */
@@ -274,11 +274,20 @@ class Client
             }
 
             $response = $this->guzzleClient->post('parcels', $data);
+            $json = json_decode((string)$response->getBody(), true);
 
-            foreach (json_decode((string)$response->getBody(), true)['parcels'] as $parcel) {
+            // Retrieve successfully created parcels
+            foreach ($json['parcels'] as $parcel) {
                 $parcels[] = new Parcel($parcel);
             }
 
+            // Retrieve failed parcels
+            if(isset($json['failed_parcels'])) {
+                foreach ($json['failed_parcels'] as $parcel) {
+                    $parcels[] = new Parcel($parcel);
+                }
+            }
+            
             return $parcels;
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
