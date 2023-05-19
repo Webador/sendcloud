@@ -218,7 +218,7 @@ class Parcel
 
         if (isset($data['errors'])) {
             foreach ((array)$data['errors'] as $key => $itemData) {
-                $this->errors[$key] = $itemData;
+                $this->errors[$key][] = $itemData;
             }
         }
     }
