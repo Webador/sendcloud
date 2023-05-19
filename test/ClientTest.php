@@ -188,7 +188,7 @@ class ClientTest extends TestCase
         $this->assertNull($parcel->getShippingMethodId());
         $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
         $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
-        $this->assertEquals(['name' => "This field is required."], $parcel->getErrors());
+        $this->assertEquals(['name' => ["This field is required."]], $parcel->getErrors());
     }
     
     public function testCreateMultiParcel(): void
