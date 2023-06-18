@@ -17,11 +17,10 @@ use PHPUnit\Framework\TestCase;
 
 class ClientTest extends TestCase
 {
-    /** @var Client */
-    protected $client;
+    protected Client $client;
 
-    /** @var \GuzzleHttp\Client|MockObject */
-    protected $guzzleClientMock;
+    /** @var \GuzzleHttp\Client&MockObject */
+    protected \GuzzleHttp\Client $guzzleClientMock;
 
     public function setUp(): void
     {
@@ -190,7 +189,7 @@ class ClientTest extends TestCase
         $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
         $this->assertEquals(['name' => ["This field is required."]], $parcel->getErrors());
     }
-    
+
     public function testCreateMultiParcel(): void
     {
         $parcel_json_1 = '{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
@@ -233,7 +232,7 @@ class ClientTest extends TestCase
             $this->assertNull($parcel->getShippingMethodId());
             $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
             $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
-        } 
+        }
     }
 
     public function testCreateMultiParcelWithVerboseError(): void

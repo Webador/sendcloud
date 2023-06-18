@@ -97,56 +97,42 @@ class Parcel
         self::ERROR_VERBOSE_CARRIER
     ];
 
-    /** @var \DateTime */
-    protected $created;
+    protected \DateTimeImmutable $created;
 
-    /** @var string */
-    protected $trackingNumber;
+    protected string $trackingNumber;
 
-    /** @var string */
-    protected $statusMessage;
+    protected string $statusMessage;
 
-    /** @var int */
-    protected $statusId;
+    protected int $statusId;
 
-    /** @var int */
-    protected $id;
+    protected int $id;
 
     /** @var string[]|null */
-    protected $labelUrls;
+    protected ?array $labelUrls = null;
 
-    /** @var string|null */
-    protected $trackingUrl;
+    protected ?string $trackingUrl = null;
 
-    /** @var Address */
-    protected $address;
+    protected Address $address;
 
-    /** @var int */
-    protected $weight;
+    protected int $weight;
 
-    /** @var string|null */
-    protected $carrier;
+    protected ?string $carrier = null;
 
-    /** @var string|null */
-    protected $orderNumber;
+    protected ?string $orderNumber = null;
 
-    /** @var int|null */
-    protected $shippingMethodId;
+    protected ?int $shippingMethodId = null;
 
-    /** @var int|null */
-    protected $servicePointId;
+    protected ?int $servicePointId = null;
 
-    /** @var string|null */
-    protected $customsInvoiceNumber;
+    protected ?string $customsInvoiceNumber = null;
 
-    /** @var int|null */
-    protected $customsShipmentType;
+    protected ?int $customsShipmentType = null;
 
     /** @var ParcelItem[] */
-    protected $items = [];
+    protected array $items = [];
 
-    /** @var string[] */
-    protected $errors = [];
+    /** @var array<string, string> */
+    protected array $errors = [];
 
     public function __construct(array $data)
     {
@@ -312,9 +298,9 @@ class Parcel
     }
 
     /**
-     * @return string[]
+     * @return array<string, string>
      */
-    public function getErrors() : array
+    public function getErrors(): array
     {
         return $this->errors;
     }

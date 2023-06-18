@@ -4,29 +4,21 @@ namespace JouwWeb\SendCloud\Model;
 
 class User
 {
-    /** @var string */
-    protected $username;
+    protected string $username;
 
-    /** @var string */
-    protected $companyName;
+    protected string $companyName;
 
-    /** @var string */
-    protected $phoneNumber;
+    protected string $phoneNumber;
 
-    /** @var string */
-    protected $address;
+    protected string $address;
 
-    /** @var string */
-    protected $postalCode;
+    protected string $postalCode;
 
-    /** @var string */
-    protected $city;
+    protected string $city;
 
-    /** @var string */
-    protected $emailAddress;
+    protected string $emailAddress;
 
-    /** @var \DateTime */
-    protected $registered;
+    protected \DateTimeImmutable $registered;
 
     public function __construct(array $data)
     {

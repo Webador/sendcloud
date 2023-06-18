@@ -4,26 +4,20 @@ namespace JouwWeb\SendCloud\Model;
 
 class ShippingMethod
 {
-    /** @var int */
-    protected $id;
+    protected int $id;
 
-    /** @var string */
-    protected $name;
+    protected string $name;
 
-    /** @var int */
-    protected $minimumWeight;
+    protected int $minimumWeight;
 
-    /** @var int */
-    protected $maximumWeight;
+    protected int $maximumWeight;
 
-    /** @var string */
-    protected $carrier;
+    protected string $carrier;
 
-    /** @var int[] */
-    protected $prices = [];
+    /** @var array<string, int> */
+    protected array $prices = [];
 
-    /** @var bool */
-    protected $allowsServicePoints = false;
+    protected bool $allowsServicePoints = false;
 
     public function __construct(array $data)
     {
@@ -53,8 +47,6 @@ class ShippingMethod
 
     /**
      * In grams, inclusive.
-     *
-     * @return int
      */
     public function getMinimumWeight(): int
     {
@@ -63,8 +55,6 @@ class ShippingMethod
 
     /**
      * In grams, inclusive.
-     *
-     * @return int
      */
     public function getMaximumWeight(): int
     {
@@ -73,8 +63,6 @@ class ShippingMethod
 
     /**
      * Code of the carrier.
-     *
-     * @return string
      */
     public function getCarrier(): string
     {
@@ -84,7 +72,7 @@ class ShippingMethod
     /**
      * Prices, in cents, indexed by country code.
      *
-     * @return int[]
+     * @return array<string, int>
      */
     public function getPrices(): array
     {

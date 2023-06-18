@@ -16,11 +16,9 @@ class Utility
      * If you already have a {@see Client} instance you can use {@see Client::parseWebhookRequest()} to accomplish the
      * same functionality without providing the secret key again.
      *
-     * @param RequestInterface $request
      * @param string|null $secretKey Pass a secret key to verify the webhook request or null to disable verification. Do
      * make sure to verify the request with {@see verifyWebhookRequest()} some other time (E.g., after fetching a secret
      * key for the parsed request).
-     * @return WebhookEvent
      * @throws SendCloudWebhookException Thrown when the payload fails to validate with the given secret key.
      */
     public static function parseWebhookRequest(RequestInterface $request, ?string $secretKey): WebhookEvent
@@ -45,8 +43,6 @@ class Utility
      * Validates an incoming webhook request using the given secret key. If the request fails to validate an exception
      * will be thrown.
      *
-     * @param RequestInterface $request
-     * @param string $secretKey
      * @throws SendCloudWebhookException
      */
     public static function verifyWebhookRequest(RequestInterface $request, string $secretKey): void
@@ -70,29 +66,17 @@ class Utility
 
     /**
      * Returns the URL to the label with the given format if it is contained in the data.
-     *
-     * @param mixed[] $data
-     * @param int $format
-     * @return string|null
      */
     public static function getLabelUrlFromData(array $data, int $format): ?string
     {
-        $labelUrl = null;
-        switch ($format) {
-            case Parcel::LABEL_FORMAT_A6:
-                $labelUrl = ($data['label']['label_printer'] ?? null);
-                break;
-
-            case Parcel::LABEL_FORMAT_A4_TOP_LEFT:
-            case Parcel::LABEL_FORMAT_A4_TOP_RIGHT:
-            case Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT:
-            case Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT:
-                $labelUrl = ($data['label']['normal_printer'][$format - 2] ?? null);
-                break;
-
-            default:
-                throw new \InvalidArgumentException(sprintf('Invalid label format "%s".', $format));
-        }
+        $labelUrl = match ($format) {
+            Parcel::LABEL_FORMAT_A6 => ($data['label']['label_printer'] ?? null),
+            Parcel::LABEL_FORMAT_A4_TOP_LEFT,
+            Parcel::LABEL_FORMAT_A4_TOP_RIGHT,
+            Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT,
+            Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT => ($data['label']['normal_printer'][$format - 2] ?? null),
+            default => throw new \InvalidArgumentException(sprintf('Invalid label format "%s".', $format)),
+        };
 
         return ($labelUrl ? (string)$labelUrl : null);
     }

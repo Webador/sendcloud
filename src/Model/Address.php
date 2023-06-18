@@ -4,63 +4,19 @@ namespace JouwWeb\SendCloud\Model;
 
 class Address
 {
-    /** @var string */
-    protected $name;
-
-    /** @var string|null */
-    protected $companyName;
-
-    /** @var string */
-    protected $street;
-
-    /** @var string */
-    protected $houseNumber;
-
-    /** @var string */
-    protected $city;
-
-    /** @var string */
-    protected $postalCode;
-
-    /** @var string */
-    protected $countryCode;
-
-    /** @var string|null */
-    protected $countryStateCode;
-
-    /** @var string */
-    protected $emailAddress;
-
-    /** @var string|null */
-    protected $phoneNumber;
-
-    /** @var string|null */
-    protected $addressLine2;
-
     public function __construct(
-        string $name,
-        ?string $companyName,
-        string $street,
-        string $houseNumber,
-        string $city,
-        string $postalCode,
-        string $countryCode,
-        string $emailAddress,
-        ?string $phoneNumber = null,
-        ?string $addressLine2 = null,
-        ?string $countryStateCode = null
+        protected string $name,
+        protected ?string $companyName,
+        protected string $street,
+        protected string $houseNumber,
+        protected string $city,
+        protected string $postalCode,
+        protected string $countryCode,
+        protected string $emailAddress,
+        protected ?string $phoneNumber = null,
+        protected ?string $addressLine2 = null,
+        protected ?string $countryStateCode = null
     ) {
-        $this->name = $name;
-        $this->companyName = $companyName;
-        $this->street = $street;
-        $this->houseNumber = $houseNumber;
-        $this->city = $city;
-        $this->postalCode = $postalCode;
-        $this->countryCode = $countryCode;
-        $this->emailAddress = $emailAddress;
-        $this->phoneNumber = $phoneNumber;
-        $this->addressLine2 = $addressLine2;
-        $this->countryStateCode = $countryStateCode;
     }
 
     public function getName(): string

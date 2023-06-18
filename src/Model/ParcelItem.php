@@ -7,32 +7,29 @@ namespace JouwWeb\SendCloud\Model;
  */
 class ParcelItem
 {
-    /** @var string Description, or name, of the item. */
-    private $description;
+    /** Description, or name, of the item. */
+    private string $description;
 
-    /** @var int */
-    private $quantity;
+    private int $quantity;
 
-    /** @var int In grams. */
-    private $weight;
+    /** Weight of the item in grams. */
+    private int $weight;
 
-    /** @var float The value, or price, per item. Up to 2 decimal places in accuracy. */
-    private $value;
+    /** The value, or price, per item. Up to 2 decimal places in accuracy. */
+    private float $value;
 
-    /** @var string|null */
-    private $harmonizedSystemCode;
+    private ?string $harmonizedSystemCode = null;
 
-    /** @var string|null 2 letter code of item production country. */
-    private $originCountryCode;
+    /** 2-letter code of item production country. */
+    private ?string $originCountryCode = null;
 
-    /** @var string|null SKU of the product. */
-    private $sku;
+    private ?string $sku = null;
 
-    /** @var string|null The internal ID of the product. */
-    private $productId;
+    /** The internal ID of the product. */
+    private ?string $productId = null;
 
-    /** @var mixed[]|null List of properties of the product passed along as a JSON object. */
-    private $properties;
+    /** List of properties of the product passed along as a JSON object. */
+    private ?array $properties = null;
 
     public static function createFromData(array $data): self
     {
@@ -164,17 +161,11 @@ class ParcelItem
         $this->productId = $productId;
     }
 
-    /**
-     * @return mixed[]|null
-     */
     public function getProperties(): ?array
     {
         return $this->properties;
     }
 
-    /**
-     * @param mixed[]|null $properties
-     */
     public function setProperties(?array $properties): void
     {
         $this->properties = $properties;

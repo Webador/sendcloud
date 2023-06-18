@@ -4,38 +4,27 @@ namespace JouwWeb\SendCloud\Model;
 
 class SenderAddress
 {
-    /** @var int */
-    protected $id;
+    protected int $id;
 
-    /** @var string */
-    protected $companyName;
+    protected string $companyName;
 
-    /** @var string */
-    protected $contactName;
+    protected string $contactName;
 
-    /** @var string */
-    protected $email;
+    protected string $email;
 
-    /** @var string */
-    protected $telephone;
+    protected string $telephone;
 
-    /** @var string */
-    protected $street;
+    protected string $street;
 
-    /** @var string */
-    protected $houseNumber;
+    protected string $houseNumber;
 
-    /** @var string */
-    protected $postalBox;
+    protected string $postalBox;
 
-    /** @var string */
-    protected $postalCode;
+    protected string $postalCode;
 
-    /** @var string */
-    protected $city;
+    protected string $city;
 
-    /** @var string */
-    protected $countryCode;
+    protected string $countryCode;
 
     public function __construct(array $data)
     {
@@ -109,8 +98,6 @@ class SenderAddress
 
     /**
      * Returns a one-line description similar to how Sendcloud displays a sender address.
-     *
-     * @return string
      */
     public function getDisplayName(): string
     {
