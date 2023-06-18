@@ -36,7 +36,7 @@ class Utility
             );
         }
 
-        return new WebhookEvent($data);
+        return WebhookEvent::fromData($data);
     }
 
     /**

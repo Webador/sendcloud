@@ -4,32 +4,30 @@ namespace JouwWeb\SendCloud\Model;
 
 class User
 {
-    protected string $username;
-
-    protected string $companyName;
-
-    protected string $phoneNumber;
-
-    protected string $address;
-
-    protected string $postalCode;
-
-    protected string $city;
-
-    protected string $emailAddress;
-
-    protected \DateTimeImmutable $registered;
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->username = (string)$data['username'];
-        $this->companyName = (string)$data['company_name'];
-        $this->phoneNumber = (string)$data['telephone'];
-        $this->address = (string)$data['address'];
-        $this->postalCode = (string)$data['postal_code'];
-        $this->city = (string)$data['city'];
-        $this->emailAddress = (string)$data['email'];
-        $this->registered = new \DateTimeImmutable((string)$data['registered']);
+        return new self(
+            (string)$data['username'],
+            (string)$data['company_name'],
+            (string)$data['telephone'],
+            (string)$data['address'],
+            (string)$data['postal_code'],
+            (string)$data['city'],
+            (string)$data['email'],
+            new \DateTimeImmutable((string)$data['registered']),
+        );
+    }
+
+    public function __construct(
+        protected string $username,
+        protected string $companyName,
+        protected string $phoneNumber,
+        protected string $address,
+        protected string $postalCode,
+        protected string $city,
+        protected string $emailAddress,
+        protected \DateTimeImmutable $registered,
+    ) {
     }
 
     public function getUsername(): string

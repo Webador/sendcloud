@@ -4,6 +4,23 @@ namespace JouwWeb\SendCloud\Model;
 
 class Address
 {
+    public static function fromParcelData(array $data): self
+    {
+        return new self(
+            (string)$data['name'],
+            (string)$data['company_name'],
+            (string)$data['address_divided']['street'],
+            (string)$data['address_divided']['house_number'],
+            (string)$data['city'],
+            (string)$data['postal_code'],
+            (string)$data['country']['iso_2'],
+            (string)$data['email'],
+            ((string)$data['telephone'] ?: null),
+            ((string)$data['address_2'] ?: null),
+            ((string)$data['to_state'] ?: null)
+        );
+    }
+
     public function __construct(
         protected string $name,
         protected ?string $companyName,

@@ -210,7 +210,7 @@ class ClientTest extends TestCase
             null,
             null,
             null,
-            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
+            ShippingMethod::fromData(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
             null,
             2
         );
@@ -254,7 +254,7 @@ class ClientTest extends TestCase
             null,
             null,
             null,
-            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
+            ShippingMethod::fromData(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
             Parcel::ERROR_VERBOSE,
             2
         );

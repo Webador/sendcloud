@@ -20,32 +20,32 @@ class WebhookEvent
         self::TYPE_TEST,
     ];
 
-    protected string $type;
-
-    protected \DateTimeImmutable|null $created = null;
-
-    protected ?Parcel $parcel = null;
-
-    protected array $payload;
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->type = (string)$data['action'];
-
+        $created = null;
         if (isset($data['timestamp'])) {
             $timestamp = (int)$data['timestamp'];
-            $this->created = \DateTimeImmutable::createFromFormat('U.u', sprintf(
+            $created = \DateTimeImmutable::createFromFormat('U.u', sprintf(
                 '%s.%s',
                 floor($timestamp / 1000),
                 $timestamp % 1000 * 1000
             ));
         }
 
-        $this->payload = array_diff_key($data, array_flip(['action', 'timestamp']));
+        return new self(
+            (string)$data['action'],
+            array_diff_key($data, array_flip(['action', 'timestamp'])),
+            $created,
+            isset($data['parcel']) ? Parcel::fromData($data['parcel']) : null,
+        );
+    }
 
-        if (isset($this->payload['parcel'])) {
-            $this->parcel = new Parcel($this->payload['parcel']);
-        }
+    public function __construct(
+        protected string $type,
+        protected array $payload,
+        protected ?\DateTimeImmutable $created = null,
+        protected ?Parcel $parcel = null,
+    ) {
     }
 
     public function getType(): string

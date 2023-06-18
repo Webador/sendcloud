@@ -63,7 +63,7 @@ class Client
     public function getUser(): User
     {
         try {
-            return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
+            return User::fromData(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
@@ -114,9 +114,9 @@ class Client
             ]);
             $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
-            $shippingMethods = array_map(function (array $shippingMethodData) {
-                return new ShippingMethod($shippingMethodData);
-            }, $shippingMethodsData);
+            $shippingMethods = array_map(fn (array $shippingMethodData) => (
+                ShippingMethod::fromData($shippingMethodData)
+            ), $shippingMethodsData);
 
             // Sort by carrier and name
             usort($shippingMethods, function (ShippingMethod $method1, ShippingMethod $method2) {
@@ -193,7 +193,7 @@ class Client
 
             $response = $this->guzzleClient->post('parcels', $data);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
         }
@@ -261,14 +261,14 @@ class Client
 
             // Retrieve successfully created parcels
             foreach ($json['parcels'] as $parcel) {
-                $parcels[] = new Parcel($parcel);
+                $parcels[] = Parcel::fromData($parcel);
             }
 
             // Retrieve failed parcels
             /*
             if(isset($json['failed_parcels'])) {
                 foreach ($json['failed_parcels'] as $parcel) {
-                    $parcels[] = new Parcel($parcel);
+                    $parcels[] = Parcel::fromData($parcel);
                 }
             }
             */
@@ -308,7 +308,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not update parcel in SendCloud.');
         }
@@ -345,7 +345,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel with Sendcloud.');
         }
@@ -468,7 +468,7 @@ class Client
             $senderAddressesData = json_decode((string)$response->getBody(), true)['sender_addresses'];
 
             return array_map(function (array $senderAddressData) {
-                return new SenderAddress($senderAddressData);
+                return SenderAddress::fromData($senderAddressData);
             }, $senderAddressesData);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve sender addresses.');
@@ -484,7 +484,7 @@ class Client
     {
         try {
             $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve parcel.');
         }
