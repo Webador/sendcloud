@@ -269,7 +269,7 @@ class Parcel
         return [
             'address' => $this->getAddress()->toArray(),
             'carrier' => $this->getCarrier(),
-            'created' => $this->getCreated()->format(DATE_ISO8601),
+            'created' => $this->getCreated()->format(\DateTimeInterface::ATOM),
             'id' => $this->getId(),
             'labels' => array_map(function (int $format): ?string {
                 return $this->getLabelUrl($format);

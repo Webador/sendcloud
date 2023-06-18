@@ -215,7 +215,7 @@ class ClientTest extends TestCase
             2
         );
 
-        $this->assertEquals(2, count($parcels));
+        $this->assertCount(2, $parcels);
 
         foreach($parcels as $key => $parcel) {
             $id = $key == 0 ? 8293794 : 8293795;
@@ -259,7 +259,7 @@ class ClientTest extends TestCase
             2
         );
 
-        $this->assertEquals(0, count($parcels));
+        $this->assertCount(0, $parcels);
     }
 
     public function testCreateParcelCustoms(): void
