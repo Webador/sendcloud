@@ -11,6 +11,7 @@ use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Model\Address;
 use JouwWeb\SendCloud\Model\Parcel;
 use JouwWeb\SendCloud\Model\ParcelItem;
+use JouwWeb\SendCloud\Model\ShippingMethod;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -152,6 +153,114 @@ class ClientTest extends TestCase
         $this->assertNull($parcel->getShippingMethodId());
         $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
         $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
+    }
+
+    public function testCreateParcelWithVerboseError(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001", "errors" : {"name": "This field is required."}}}'
+        ));
+
+        $parcel = $this->client->createParcel(
+            new Address('', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            null,
+            '201900001',
+            2486,
+            null,
+            null,
+            null,
+            null,
+            null,
+            Parcel::ERROR_VERBOSE
+        );
+
+        $this->assertEquals(8293794, $parcel->getId());
+        $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->getStatusId());
+        $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
+        //$this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
+        $this->assertEquals('', $parcel->getAddress()->getCompanyName());
+        $this->assertFalse($parcel->hasLabel());
+        $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
+        $this->assertEquals(2486, $parcel->getWeight());
+        $this->assertEquals('201900001', $parcel->getOrderNumber());
+        $this->assertNull($parcel->getShippingMethodId());
+        $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
+        $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
+        $this->assertEquals(['name' => ["This field is required."]], $parcel->getErrors());
+    }
+    
+    public function testCreateMultiParcel(): void
+    {
+        $parcel_json_1 = '{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
+        $parcel_json_2 = '{"id":8293795,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
+
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcels":['.$parcel_json_1.','.$parcel_json_2.']}'
+        ));
+
+        $parcels = $this->client->createMultiParcel(
+            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            null,
+            '201900001',
+            2486,
+            null,
+            null,
+            null,
+            null,
+            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
+            null,
+            2
+        );
+
+        $this->assertEquals(2, count($parcels));
+
+        foreach($parcels as $key => $parcel) {
+            $id = $key == 0 ? 8293794 : 8293795;
+
+            $this->assertEquals($id, $parcel->getId());
+            $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->getStatusId());
+            $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
+            $this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
+            $this->assertEquals('', $parcel->getAddress()->getCompanyName());
+            $this->assertFalse($parcel->hasLabel());
+            $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
+            $this->assertEquals(2486, $parcel->getWeight());
+            $this->assertEquals('201900001', $parcel->getOrderNumber());
+            $this->assertNull($parcel->getShippingMethodId());
+            $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
+            $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
+        } 
+    }
+
+    public function testCreateMultiParcelWithVerboseError(): void
+    {
+        $parcel_json = '{"name":"Baron van der Zanden","company_name":"","address":"straat","address_2":"CA","house_number":"23","city":"Gehucht","postal_code":"9283DD","country":"NL","email":"baron@vanderzanden.nl","telephone":"Blok 3","country_state":"","order_number":"201900001","weight":"2.486","request_label":true,"shipment":{"id":1},"quantity":2}';
+
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcels": [], "failed_parcels": [{"parcel":'.$parcel_json.', "errors": { "name": ["This field is required."]}}]}'
+        ));
+
+        $parcels = $this->client->createMultiParcel(
+            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            null,
+            '201900001',
+            2486,
+            null,
+            null,
+            null,
+            null,
+            new ShippingMethod(['id' => 1, 'name' => 'test', 'min_weight' => 1, 'max_weight' => 1000, 'carrier' => 'sendcloud', 'service_point_input' => 'none', 'countries' => [['iso_2' => 'CA', 'price' => 0]]]),
+            Parcel::ERROR_VERBOSE,
+            2
+        );
+
+        $this->assertEquals(0, count($parcels));
     }
 
     public function testCreateParcelCustoms(): void

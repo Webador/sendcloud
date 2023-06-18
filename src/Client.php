@@ -162,6 +162,8 @@ class Client
      * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
+     * @param ?ShippingMethod $shippingMethod
+     * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel
      * @throws SendCloudRequestException
      */
@@ -173,7 +175,9 @@ class Client
         ?string $customsInvoiceNumber = null,
         ?int $customsShipmentType = null,
         ?array $items = null,
-        ?string $postNumber = null
+        ?string $postNumber = null,
+        ?ShippingMethod $shippingMethod = null,
+        ?string $errors = null
     ): Parcel {
         $parcelData = $this->getParcelData(
             null,
@@ -182,7 +186,7 @@ class Client
             $orderNumber,
             $weight,
             false,
-            null,
+            $shippingMethod,
             null,
             $customsInvoiceNumber,
             $customsShipmentType,
@@ -191,13 +195,102 @@ class Client
         );
 
         try {
-            $response = $this->guzzleClient->post('parcels', [
+            $data = [
                 'json' => [
                     'parcel' => $parcelData,
                 ],
-            ]);
+            ];
+
+            if(isset($errors)){
+                $data['query'] = ['errors' => $errors];
+            }
+
+            $response = $this->guzzleClient->post('parcels', $data);
 
             return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
+        }
+    }
+
+    /**
+     * Creates a multi-collo parcel in Sendcloud.
+     *
+     * @param Address $shippingAddress Address to be shipped to.
+     * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
+     * still required as it will be printed on the label.
+     * @param string|null $orderNumber
+     * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
+     * @param string|null $customsInvoiceNumber
+     * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param ParcelItem[]|null $items Items contained in the parcel.
+     * @param string|null $postNumber Number that may be required to send to a service point.
+     * @param ?ShippingMethod $shippingMethod
+     * @param int $quantity Number of parcels to generate for multi-collo shipment.
+     * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
+     * @return Parcel[]
+     * @throws SendCloudRequestException
+     */
+    public function createMultiParcel(
+        Address $shippingAddress,
+        ?int $servicePointId,
+        ?string $orderNumber = null,
+        ?int $weight = null,
+        ?string $customsInvoiceNumber = null,
+        ?int $customsShipmentType = null,
+        ?array $items = null,
+        ?string $postNumber = null,
+        ?ShippingMethod $shippingMethod = null,
+        ?string $errors = null,
+        int $quantity = 1
+    ) : array {
+        $parcelData = $this->getParcelData(
+            null,
+            $shippingAddress,
+            $servicePointId,
+            $orderNumber,
+            $weight,
+            true,
+            $shippingMethod,
+            null,
+            $customsInvoiceNumber,
+            $customsShipmentType,
+            $items,
+            $postNumber
+        );
+        $parcelData['quantity'] = $quantity;
+
+        try {
+            $parcels = [];
+
+            $data = [
+                'json' => [
+                    'parcels' => [$parcelData],
+                ],
+            ];
+
+            if(isset($errors)){
+                $data['query'] = ['errors' => $errors];
+            }
+
+            $response = $this->guzzleClient->post('parcels', $data);
+            $json = json_decode((string)$response->getBody(), true);
+
+            // Retrieve successfully created parcels
+            foreach ($json['parcels'] as $parcel) {
+                $parcels[] = new Parcel($parcel);
+            }
+
+            // Retrieve failed parcels
+            /*
+            if(isset($json['failed_parcels'])) {
+                foreach ($json['failed_parcels'] as $parcel) {
+                    $parcels[] = new Parcel($parcel);
+                }
+            }
+            */
+            
+            return $parcels;
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
         }
