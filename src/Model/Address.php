@@ -41,19 +41,9 @@ class Address
         return $this->name;
     }
 
-    public function setName(string $name): void
-    {
-        $this->name = $name;
-    }
-
     public function getCompanyName(): ?string
     {
         return $this->companyName;
-    }
-
-    public function setCompanyName(?string $companyName): void
-    {
-        $this->companyName = $companyName;
     }
 
     public function getStreet(): string
@@ -61,19 +51,9 @@ class Address
         return $this->street;
     }
 
-    public function setStreet(string $street): void
-    {
-        $this->street = $street;
-    }
-
     public function getHouseNumber(): string
     {
         return $this->houseNumber;
-    }
-
-    public function setHouseNumber(string $houseNumber): void
-    {
-        $this->houseNumber = $houseNumber;
     }
 
     public function getCity(): string
@@ -81,19 +61,9 @@ class Address
         return $this->city;
     }
 
-    public function setCity(string $city): void
-    {
-        $this->city = $city;
-    }
-
     public function getPostalCode(): string
     {
         return $this->postalCode;
-    }
-
-    public function setPostalCode(string $postalCode): void
-    {
-        $this->postalCode = $postalCode;
     }
 
     public function getCountryCode(): string
@@ -101,19 +71,9 @@ class Address
         return $this->countryCode;
     }
 
-    public function setCountryCode(string $countryCode): void
-    {
-        $this->countryCode = $countryCode;
-    }
-
     public function getEmailAddress(): string
     {
         return $this->emailAddress;
-    }
-
-    public function setEmailAddress(string $emailAddress): void
-    {
-        $this->emailAddress = $emailAddress;
     }
 
     public function getPhoneNumber(): ?string
@@ -121,29 +81,14 @@ class Address
         return $this->phoneNumber;
     }
 
-    public function setPhoneNumber(?string $phoneNumber): void
-    {
-        $this->phoneNumber = $phoneNumber;
-    }
-
     public function getAddressLine2(): ?string
     {
         return $this->addressLine2;
     }
 
-    public function setAddressLine2(?string $addressLine2): void
-    {
-        $this->addressLine2 = $addressLine2;
-    }
-
     public function getCountryStateCode(): ?string
     {
         return $this->countryStateCode;
-    }
-
-    public function setCountryStateCode(?string $countryStateCode): void
-    {
-        $this->countryStateCode = $countryStateCode;
     }
 
     public function getDisplayName(): string
