@@ -31,6 +31,7 @@ class ClientTest extends TestCase
         // Inject the mock HTTP client through reflection. The alternative is to pass it into the ctor but that would
         // require us to use PSR-7 requests instead of Guzzle's more convenient usage.
         $clientProperty = new \ReflectionProperty(Client::class, 'guzzleClient');
+        $clientProperty->setAccessible(true);
         $clientProperty->setValue($this->client, $this->guzzleClientMock);
     }
 
