@@ -97,84 +97,8 @@ class Parcel
         self::ERROR_VERBOSE_CARRIER
     ];
 
-    /** @var \DateTime */
-    protected $created;
-
-    /** @var string */
-    protected $trackingNumber;
-
-    /** @var string */
-    protected $statusMessage;
-
-    /** @var int */
-    protected $statusId;
-
-    /** @var int */
-    protected $id;
-
-    /** @var string[]|null */
-    protected $labelUrls;
-
-    /** @var string|null */
-    protected $trackingUrl;
-
-    /** @var Address */
-    protected $address;
-
-    /** @var int */
-    protected $weight;
-
-    /** @var string|null */
-    protected $carrier;
-
-    /** @var string|null */
-    protected $orderNumber;
-
-    /** @var int|null */
-    protected $shippingMethodId;
-
-    /** @var int|null */
-    protected $servicePointId;
-
-    /** @var string|null */
-    protected $customsInvoiceNumber;
-
-    /** @var int|null */
-    protected $customsShipmentType;
-
-    /** @var ParcelItem[] */
-    protected $items = [];
-
-    /** @var string[] */
-    protected $errors = [];
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->id = (int)$data['id'];
-        $this->statusId = (int)$data['status']['id'];
-        $this->statusMessage = (string)$data['status']['message'];
-        $this->created = new \DateTimeImmutable((string)$data['date_created']);
-        $this->trackingNumber = (string)$data['tracking_number'];
-        $this->weight = (int)round(((float)$data['weight']) * 1000);
-
-        $this->address = new Address(
-            (string)$data['name'],
-            (string)$data['company_name'],
-            (string)$data['address_divided']['street'],
-            (string)$data['address_divided']['house_number'],
-            (string)$data['city'],
-            (string)$data['postal_code'],
-            (string)$data['country']['iso_2'],
-            (string)$data['email'],
-            ((string)$data['telephone'] ?: null),
-            ((string)$data['address_2'] ?: null),
-            ((string)$data['to_state'] ?: null)
-        );
-
-        if (isset($data['tracking_url'])) {
-            $this->trackingUrl = (string)$data['tracking_url'];
-        }
-
         $labelUrls = [];
         foreach (self::LABEL_FORMATS as $format) {
             $labelUrl = Utility::getLabelUrlFromData($data, $format);
@@ -182,45 +106,66 @@ class Parcel
                 $labelUrls[$format] = $labelUrl;
             }
         }
-        if (count($labelUrls) > 0) {
-            $this->labelUrls = $labelUrls;
-        }
 
-        if (isset($data['carrier']['code'])) {
-            $this->carrier = (string)$data['carrier']['code'];
-        }
-
-        if (isset($data['order_number'])) {
-            $this->orderNumber = (string)$data['order_number'];
-        }
-
-        if (isset($data['shipment']['id'])) {
-            $this->shippingMethodId = (int)$data['shipment']['id'];
-        }
-
-        if (isset($data['to_service_point'])) {
-            $this->servicePointId = (int)$data['to_service_point'];
-        }
-
-        if (isset($data['customs_invoice_nr'])) {
-            $this->customsInvoiceNumber = (string)$data['customs_invoice_nr'];
-        }
-
-        if (isset($data['customs_shipment_type'])) {
-            $this->customsShipmentType = (int)$data['customs_shipment_type'];
-        }
-
+        $items = [];
         if (isset($data['parcel_items'])) {
             foreach ((array)$data['parcel_items'] as $itemData) {
-                $this->items[] = ParcelItem::createFromData($itemData);
+                $items[] = ParcelItem::fromData($itemData);
             }
         }
 
+        $errors = [];
         if (isset($data['errors'])) {
             foreach ((array)$data['errors'] as $key => $itemData) {
-                $this->errors[$key][] = $itemData;
+                $errors[$key][] = $itemData;
             }
         }
+
+        return new self(
+            (int)$data['id'],
+            (int)$data['status']['id'],
+            (string)$data['status']['message'],
+            new \DateTimeImmutable((string)$data['date_created']),
+            (string)$data['tracking_number'],
+            (int)round(((float)$data['weight']) * 1000),
+            Address::fromParcelData($data),
+            count($labelUrls) > 0 ? $labelUrls : null,
+            isset($data['tracking_url']) ?  (string)$data['tracking_url'] : null,
+            isset($data['carrier']['code']) ? (string)$data['carrier']['code'] : null,
+            isset($data['order_number']) ? (string)$data['order_number']: null,
+            isset($data['shipment']['id']) ? (int)$data['shipment']['id'] : null,
+            isset($data['to_service_point']) ? (int)$data['to_service_point'] : null,
+            isset($data['customs_invoice_nr']) ? (string)$data['customs_invoice_nr'] : null,
+            isset($data['customs_shipment_type']) ? (int)$data['customs_shipment_type'] : null,
+            $items,
+            $errors,
+        );
+    }
+
+    /**
+     * @param string[]|null $labelUrls
+     * @param ParcelItem[] $items
+     * @param array<string, string> $errors
+     */
+    public function __construct(
+        protected int $id,
+        protected int $statusId,
+        protected string $statusMessage,
+        protected \DateTimeImmutable $created,
+        protected string $trackingNumber,
+        protected int $weight,
+        protected Address $address,
+        protected ?array $labelUrls = null,
+        protected ?string $trackingUrl = null,
+        protected ?string $carrier = null,
+        protected ?string $orderNumber = null,
+        protected ?int $shippingMethodId = null,
+        protected ?int $servicePointId = null,
+        protected ?string $customsInvoiceNumber = null,
+        protected ?int $customsShipmentType = null,
+        protected array $items = [],
+        protected array $errors = [],
+    ) {
     }
 
     public function getCreated(): \DateTimeImmutable
@@ -312,9 +257,9 @@ class Parcel
     }
 
     /**
-     * @return string[]
+     * @return array<string, string>
      */
-    public function getErrors() : array
+    public function getErrors(): array
     {
         return $this->errors;
     }

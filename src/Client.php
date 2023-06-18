@@ -5,6 +5,7 @@ namespace JouwWeb\SendCloud;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\Utils;
 use JouwWeb\SendCloud\Exception\SendCloudClientException;
 use JouwWeb\SendCloud\Exception\SendCloudRequestException;
 use JouwWeb\SendCloud\Exception\SendCloudStateException;
@@ -23,30 +24,16 @@ use Psr\Http\Message\RequestInterface;
  */
 class Client
 {
-    const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
+    protected const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
 
-    /** @var \GuzzleHttp\Client */
-    protected $guzzleClient;
-
-    /** @var string */
-    protected $publicKey;
-
-    /** @var string */
-    protected $secretKey;
-
-    /** @var string|null */
-    protected $partnerId;
+    protected \GuzzleHttp\Client $guzzleClient;
 
     public function __construct(
-        string $publicKey,
-        string $secretKey,
-        ?string $partnerId = null,
+        protected string $publicKey,
+        protected string $secretKey,
+        protected ?string $partnerId = null,
         ?string $apiBaseUrl = null
     ) {
-        $this->publicKey = $publicKey;
-        $this->secretKey = $secretKey;
-        $this->partnerId = $partnerId;
-
         $clientConfig = [
             'base_uri' => $apiBaseUrl ?: self::API_BASE_URL,
             'timeout' => 60, // Mainly because the shipping methods endpoint can take a very long time to respond.
@@ -57,7 +44,7 @@ class Client
             'headers' => [
                 // Note: We use the deprecated function instead of GuzzleHttp\Utils::defaultUserAgent() to maintain
                 // support for Guzzle 6.
-                'User-Agent' => 'jouwweb/sendcloud ' . \GuzzleHttp\default_user_agent(),
+                'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
             ],
         ];
 
@@ -71,13 +58,12 @@ class Client
     /**
      * Fetches basic details about the Sendcloud account.
      *
-     * @return User
      * @throws SendCloudRequestException
      */
     public function getUser(): User
     {
         try {
-            return new User(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
+            return User::fromData(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
@@ -95,7 +81,7 @@ class Client
      */
     public function getShippingMethods(
         ?int $servicePointId = null,
-        $senderAddress = null,
+        SenderAddress|int|null $senderAddress = null,
         bool $returnMethodsOnly = false
     ): array {
         try {
@@ -128,9 +114,9 @@ class Client
             ]);
             $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
-            $shippingMethods = array_map(function (array $shippingMethodData) {
-                return new ShippingMethod($shippingMethodData);
-            }, $shippingMethodsData);
+            $shippingMethods = array_map(fn (array $shippingMethodData) => (
+                ShippingMethod::fromData($shippingMethodData)
+            ), $shippingMethodsData);
 
             // Sort by carrier and name
             usort($shippingMethods, function (ShippingMethod $method1, ShippingMethod $method2) {
@@ -159,7 +145,7 @@ class Client
      * @param string|null $orderNumber
      * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
      * @param string|null $customsInvoiceNumber
-     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
+     * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
      * @param ?ShippingMethod $shippingMethod
@@ -207,7 +193,7 @@ class Client
 
             $response = $this->guzzleClient->post('parcels', $data);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
         }
@@ -219,13 +205,10 @@ class Client
      * @param Address $shippingAddress Address to be shipped to.
      * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
      * still required as it will be printed on the label.
-     * @param string|null $orderNumber
      * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
-     * @param string|null $customsInvoiceNumber
      * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
-     * @param ?ShippingMethod $shippingMethod
      * @param int $quantity Number of parcels to generate for multi-collo shipment.
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel[]
@@ -278,18 +261,18 @@ class Client
 
             // Retrieve successfully created parcels
             foreach ($json['parcels'] as $parcel) {
-                $parcels[] = new Parcel($parcel);
+                $parcels[] = Parcel::fromData($parcel);
             }
 
             // Retrieve failed parcels
             /*
             if(isset($json['failed_parcels'])) {
                 foreach ($json['failed_parcels'] as $parcel) {
-                    $parcels[] = new Parcel($parcel);
+                    $parcels[] = Parcel::fromData($parcel);
                 }
             }
             */
-            
+
             return $parcels;
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
@@ -299,12 +282,9 @@ class Client
     /**
      * Update details of an existing parcel.
      *
-     * @param Parcel|int $parcel
-     * @param Address $shippingAddress
-     * @return Parcel
      * @throws SendCloudRequestException
      */
-    public function updateParcel($parcel, Address $shippingAddress): Parcel
+    public function updateParcel(Parcel|int $parcel, Address $shippingAddress): Parcel
     {
         $parcelData = $this->getParcelData(
             $this->parseParcelArgument($parcel),
@@ -328,7 +308,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not update parcel in SendCloud.');
         }
@@ -336,15 +316,12 @@ class Client
 
     /**
      * Request a label for an existing parcel.
-     *
-     * @param Parcel|int $parcel
-     * @param ShippingMethod|int $shippingMethod
-     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick Sendcloud's default. An Address will
+
+     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
-     * @return Parcel
      * @throws SendCloudRequestException
      */
-    public function createLabel($parcel, $shippingMethod, $senderAddress): Parcel
+    public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress): Parcel
     {
         $parcelData = $this->getParcelData(
             $this->parseParcelArgument($parcel),
@@ -368,7 +345,7 @@ class Client
                 ],
             ]);
 
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not create parcel with Sendcloud.');
         }
@@ -377,11 +354,9 @@ class Client
     /**
      * Cancels or deletes a parcel (depending on status). Returns whether the parcel was successfully cancelled.
      *
-     * @param Parcel|int $parcel
-     * @return bool
      * @throws SendCloudRequestException
      */
-    public function cancelParcel($parcel): bool
+    public function cancelParcel(Parcel|int $parcel): bool
     {
         try {
             $this->guzzleClient->post(sprintf('parcels/%s/cancel', $this->parseParcelArgument($parcel)));
@@ -404,12 +379,11 @@ class Client
     /**
      * Fetches the PDF label for the given parcel. The parcel must already have a label created.
      *
-     * @param Parcel|int $parcel
      * @param int $format `Parcel::LABEL_FORMATS`
      * @return string PDF data.
      * @throws SendCloudClientException
      */
-    public function getLabelPdf($parcel, int $format): string
+    public function getLabelPdf(Parcel|int $parcel, int $format): string
     {
         if (!in_array($format, Parcel::LABEL_FORMATS)) {
             throw new \InvalidArgumentException('Invalid label format given.');
@@ -438,7 +412,7 @@ class Client
      * Fetches a single PDF containing labels for all the given parcels. Parcels that do not have a label available will
      * not be contained in the PDF. If only parcels without a label have been requested it will result in an exception.
      *
-     * @param Parcel[]|int[] $parcels
+     * @param array<Parcel|int> $parcels
      * @param int $format One of `Parcel::LABEL_FORMATS`. The A4 formats will contain up to 4 labels per page.
      * @return string PDF data.
      * @throws SendCloudClientException
@@ -452,7 +426,7 @@ class Client
             } elseif ($parcel instanceof Parcel) {
                 $parcelIds[] = $parcel->getId();
             } else {
-                throw new \InvalidArgumentException('Parcels must be integers or Parcel instances.');
+                throw new \InvalidArgumentException('Parcels must be Parcel instances or IDs.');
             }
         }
 
@@ -494,7 +468,7 @@ class Client
             $senderAddressesData = json_decode((string)$response->getBody(), true)['sender_addresses'];
 
             return array_map(function (array $senderAddressData) {
-                return new SenderAddress($senderAddressData);
+                return SenderAddress::fromData($senderAddressData);
             }, $senderAddressesData);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve sender addresses.');
@@ -504,15 +478,13 @@ class Client
     /**
      * Retrieves current parcel data from SendCloud.
      *
-     * @param Parcel|int $parcel
-     * @return Parcel
      * @throws SendCloudClientException
      */
-    public function getParcel($parcel): Parcel
+    public function getParcel(Parcel|int $parcel): Parcel
     {
         try {
             $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
-            return new Parcel(json_decode((string)$response->getBody(), true)['parcel']);
+            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve parcel.');
         }
@@ -521,8 +493,6 @@ class Client
     /**
      * Parse a webhook event using the client's secret key. See {@see Utility::parseWebhookRequest()} for specifics.
      *
-     * @param RequestInterface $request
-     * @return WebhookEvent
      * @throws SendCloudWebhookException
      */
     public function parseWebhookRequest(RequestInterface $request): WebhookEvent
@@ -533,11 +503,8 @@ class Client
     /**
      * Returns the return portal URL for the given parcel. Returns `null` when no return portal is configured or the
      * parcel is not associated with a brand.
-     *
-     * @param Parcel|int $parcel
-     * @return string|null
      */
-    public function getReturnPortalUrl($parcel): ?string
+    public function getReturnPortalUrl(Parcel|int $parcel): ?string
     {
         try {
             $response = $this->guzzleClient->get(sprintf(
@@ -558,20 +525,10 @@ class Client
     /**
      * Returns the given arguments as data in SendCloud parcel format.
      *
-     * @param int|null $parcelId
-     * @param Address|null $shippingAddress
-     * @param string|null $servicePointId
-     * @param string|null $orderNumber
-     * @param int|null $weight
-     * @param bool $requestLabel
      * @param ShippingMethod|int|null $shippingMethod Required if requesting a label.
-     * @param SenderAddress|int|Address|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick SendCloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
-     * @param string|null $customsInvoiceNumber
-     * @param int|null One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
-     * @param ParcelItem[]|null $items
-     * @param string|null $postNumber
-     * @return mixed[]
+     * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      */
     protected function getParcelData(
         ?int $parcelId,
@@ -580,8 +537,8 @@ class Client
         ?string $orderNumber,
         ?int $weight,
         bool $requestLabel,
-        $shippingMethod,
-        $senderAddress,
+        ShippingMethod|int|null $shippingMethod,
+        SenderAddress|Address|int|null $senderAddress,
         ?string $customsInvoiceNumber,
         ?int $customsShipmentType,
         ?array $items,
@@ -681,13 +638,8 @@ class Client
 
             // Sender address
             if ($senderAddress instanceof SenderAddress) {
-                $senderAddress = $senderAddress->getId();
-            }
-            if (is_int($senderAddress)) {
-                /** @var int $senderAddress */
-                $parcelData['sender_address'] = $senderAddress;
+                $parcelData['sender_address'] = $senderAddress->getId();
             } elseif ($senderAddress instanceof Address) {
-                /** @var Address $senderAddress */
                 $parcelData = array_merge($parcelData, [
                     'from_name' => $senderAddress->getName(),
                     'from_company_name' => $senderAddress->getCompanyName() ?? '',
@@ -700,25 +652,24 @@ class Client
                     'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
                     'from_email' => $senderAddress->getEmailAddress(),
                 ]);
-            } elseif ($senderAddress !== null) {
-                throw new \InvalidArgumentException(
-                    '$senderAddressIdOrAddress must be an integer, an Address or null when requesting a label.'
-                );
+            } elseif (is_int($senderAddress)) {
+                $parcelData['sender_address'] = $senderAddress;
             }
 
             // Shipping method
             if ($shippingMethod instanceof ShippingMethod) {
-                $shippingMethod = $shippingMethod->getId();
-            }
-            if (!is_int($shippingMethod)) {
+                $parcelData['shipment'] = [
+                    'id' => $shippingMethod->getId(),
+                ];
+            } elseif (is_int($shippingMethod)) {
+                $parcelData['shipment'] = [
+                    'id' => $shippingMethod,
+                ];
+            } else {
                 throw new \InvalidArgumentException(
-                    '$shippingMethod must be an integer or ShippingMethod instance when requesting a label.'
+                    'Shipping method must be passed when requesting a label.'
                 );
             }
-
-            $parcelData['shipment'] = [
-                'id' => $shippingMethod,
-            ];
         }
 
         return $parcelData;
@@ -761,11 +712,7 @@ class Client
         return new SendCloudRequestException($message, $code, $exception, $responseCode, $responseMessage);
     }
 
-    /**
-     * @param Parcel|int $parcel
-     * @return int
-     */
-    protected function parseParcelArgument($parcel): int
+    protected function parseParcelArgument(Parcel|int $parcel): int
     {
         if (is_int($parcel)) {
             return $parcel;

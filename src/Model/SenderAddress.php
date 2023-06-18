@@ -4,52 +4,36 @@ namespace JouwWeb\SendCloud\Model;
 
 class SenderAddress
 {
-    /** @var int */
-    protected $id;
-
-    /** @var string */
-    protected $companyName;
-
-    /** @var string */
-    protected $contactName;
-
-    /** @var string */
-    protected $email;
-
-    /** @var string */
-    protected $telephone;
-
-    /** @var string */
-    protected $street;
-
-    /** @var string */
-    protected $houseNumber;
-
-    /** @var string */
-    protected $postalBox;
-
-    /** @var string */
-    protected $postalCode;
-
-    /** @var string */
-    protected $city;
-
-    /** @var string */
-    protected $countryCode;
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->id = (int)$data['id'];
-        $this->companyName = (string)$data['company_name'];
-        $this->contactName = (string)$data['contact_name'];
-        $this->email = (string)$data['email'];
-        $this->telephone = (string)$data['telephone'];
-        $this->street = (string)$data['street'];
-        $this->houseNumber = (string)$data['house_number'];
-        $this->postalBox = (string)$data['postal_box'];
-        $this->postalCode = (string)$data['postal_code'];
-        $this->city = (string)$data['city'];
-        $this->countryCode = (string)$data['country'];
+        return new self(
+            (int)$data['id'],
+            (string)$data['company_name'],
+            (string)$data['contact_name'],
+            (string)$data['email'],
+            (string)$data['telephone'],
+            (string)$data['street'],
+            (string)$data['house_number'],
+            (string)$data['postal_box'],
+            (string)$data['postal_code'],
+            (string)$data['city'],
+            (string)$data['country'],
+        );
+    }
+
+    public function __construct(
+        protected int $id,
+        protected string $companyName,
+        protected string $contactName,
+        protected string $email,
+        protected string $telephone,
+        protected string $street,
+        protected string $houseNumber,
+        protected string $postalBox,
+        protected string $postalCode,
+        protected string $city,
+        protected string $countryCode,
+    ) {
     }
 
     public function getId(): int
@@ -109,8 +93,6 @@ class SenderAddress
 
     /**
      * Returns a one-line description similar to how Sendcloud displays a sender address.
-     *
-     * @return string
      */
     public function getDisplayName(): string
     {

@@ -4,14 +4,14 @@ namespace JouwWeb\SendCloud\Model;
 
 class WebhookEvent
 {
-    const TYPE_INTEGRATION_CONNECTED = 'integration_connected';
-    const TYPE_INTEGRATION_CREDENTIALS = 'integration_credentials';
-    const TYPE_INTEGRATION_DELETED = 'integration_deleted';
-    const TYPE_INTEGRATION_UPDATED = 'integration_updated';
-    const TYPE_PARCEL_STATUS_CHANGED = 'parcel_status_changed';
-    const TYPE_TEST = 'test_webhook';
-    /** @var string[] The types known to me. The actual type does not necessarily have to match any of these. */
-    const TYPES = [
+    public const TYPE_INTEGRATION_CONNECTED = 'integration_connected';
+    public const TYPE_INTEGRATION_CREDENTIALS = 'integration_credentials';
+    public const TYPE_INTEGRATION_DELETED = 'integration_deleted';
+    public const TYPE_INTEGRATION_UPDATED = 'integration_updated';
+    public const TYPE_PARCEL_STATUS_CHANGED = 'parcel_status_changed';
+    public const TYPE_TEST = 'test_webhook';
+    /** The types known to me. The actual type does not necessarily have to match any of these. */
+    public const TYPES = [
         self::TYPE_INTEGRATION_CONNECTED,
         self::TYPE_INTEGRATION_CREDENTIALS,
         self::TYPE_INTEGRATION_DELETED,
@@ -20,36 +20,32 @@ class WebhookEvent
         self::TYPE_TEST,
     ];
 
-    /** @var string */
-    protected $type;
-
-    /** @var \DateTimeImmutable|null */
-    protected $created;
-
-    /** @var Parcel|null */
-    protected $parcel;
-
-    /** @var mixed[] */
-    protected $payload;
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->type = (string)$data['action'];
-
+        $created = null;
         if (isset($data['timestamp'])) {
             $timestamp = (int)$data['timestamp'];
-            $this->created = \DateTimeImmutable::createFromFormat('U.u', sprintf(
+            $created = \DateTimeImmutable::createFromFormat('U.u', sprintf(
                 '%s.%s',
                 floor($timestamp / 1000),
                 $timestamp % 1000 * 1000
             ));
         }
 
-        $this->payload = array_diff_key($data, array_flip(['action', 'timestamp']));
+        return new self(
+            (string)$data['action'],
+            array_diff_key($data, array_flip(['action', 'timestamp'])),
+            $created,
+            isset($data['parcel']) ? Parcel::fromData($data['parcel']) : null,
+        );
+    }
 
-        if (isset($this->payload['parcel'])) {
-            $this->parcel = new Parcel($this->payload['parcel']);
-        }
+    public function __construct(
+        protected string $type,
+        protected array $payload,
+        protected ?\DateTimeImmutable $created = null,
+        protected ?Parcel $parcel = null,
+    ) {
     }
 
     public function getType(): string
@@ -59,8 +55,6 @@ class WebhookEvent
 
     /**
      * The time at which this event was triggered. This can differ from the time the webhook was called.
-     *
-     * @return \DateTimeImmutable|null
      */
     public function getCreated(): ?\DateTimeImmutable
     {
@@ -75,8 +69,6 @@ class WebhookEvent
     /**
      * Returns an array with the payload data specified in the event. Use this for properties that aren't parsed like
      * parcel (e.g., integration for integration events).
-     *
-     * @return mixed[]
      */
     public function getPayload(): array
     {

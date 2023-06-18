@@ -4,41 +4,42 @@ namespace JouwWeb\SendCloud\Model;
 
 class ShippingMethod
 {
-    /** @var int */
-    protected $id;
-
-    /** @var string */
-    protected $name;
-
-    /** @var int */
-    protected $minimumWeight;
-
-    /** @var int */
-    protected $maximumWeight;
-
-    /** @var string */
-    protected $carrier;
-
-    /** @var int[] */
-    protected $prices = [];
-
-    /** @var bool */
-    protected $allowsServicePoints = false;
-
-    public function __construct(array $data)
+    public static function fromData(array $data): self
     {
-        $this->id = (int)$data['id'];
-        $this->name = (string)$data['name'];
-        $this->minimumWeight = (int)($data['min_weight'] * 1000);
-        $this->maximumWeight = (int)($data['max_weight'] * 1000);
-        $this->carrier = (string)$data['carrier'];
-
-        $servicePointInput = (string)$data['service_point_input'];
-        $this->allowsServicePoints = ($servicePointInput !== 'none');
-
+        $prices = [];
         foreach ((array)$data['countries'] as $country) {
-            $this->prices[$country['iso_2']] = (int)($country['price'] * 100);
+            $prices[$country['iso_2']] = (int)($country['price'] * 100);
         }
+
+        return new self(
+            (int)$data['id'],
+            (string)$data['name'],
+            (int)($data['min_weight'] * 1000),
+            (int)($data['max_weight'] * 1000),
+            (string)$data['carrier'],
+            $prices,
+            $data['service_point_input'] !== 'none',
+        );
+    }
+
+    /**
+     * @param int $id
+     * @param string $name
+     * @param int $minimumWeight In grams, inclusive.
+     * @param int $maximumWeight In grams, inclusive.
+     * @param string $carrier Code of the carrier.
+     * @param array<string, int> $prices
+     * @param bool $allowsServicePoints
+     */
+    public function __construct(
+        protected int $id,
+        protected string $name,
+        protected int $minimumWeight,
+        protected int $maximumWeight,
+        protected string $carrier,
+        protected array $prices = [],
+        protected bool $allowsServicePoints = false,
+    ) {
     }
 
     public function getId(): int
@@ -51,40 +52,23 @@ class ShippingMethod
         return $this->name;
     }
 
-    /**
-     * In grams, inclusive.
-     *
-     * @return int
-     */
     public function getMinimumWeight(): int
     {
         return $this->minimumWeight;
     }
 
-    /**
-     * In grams, inclusive.
-     *
-     * @return int
-     */
     public function getMaximumWeight(): int
     {
         return $this->maximumWeight;
     }
 
-    /**
-     * Code of the carrier.
-     *
-     * @return string
-     */
     public function getCarrier(): string
     {
         return $this->carrier;
     }
 
     /**
-     * Prices, in cents, indexed by country code.
-     *
-     * @return int[]
+     * @return array<string, int>
      */
     public function getPrices(): array
     {
