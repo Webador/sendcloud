@@ -25,11 +25,11 @@ class Address
         protected string $name,
         protected ?string $companyName,
         protected string $address,
-        protected string $houseNumber = '',
         protected string $city,
         protected string $postalCode,
         protected string $countryCode,
         protected string $emailAddress,
+        protected string $houseNumber = '',
         protected ?string $phoneNumber = null,
         protected ?string $addressLine2 = null,
         protected ?string $countryStateCode = null
@@ -51,11 +51,6 @@ class Address
         return $this->address;
     }
 
-    public function getHouseNumber(): string
-    {
-        return $this->houseNumber;
-    }
-
     public function getCity(): string
     {
         return $this->city;
@@ -74,6 +69,11 @@ class Address
     public function getEmailAddress(): string
     {
         return $this->emailAddress;
+    }
+
+    public function getHouseNumber(): string
+    {
+        return $this->houseNumber;
     }
 
     public function getPhoneNumber(): ?string
