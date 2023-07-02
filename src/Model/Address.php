@@ -24,8 +24,8 @@ class Address
     public function __construct(
         protected string $name,
         protected ?string $companyName,
-        protected string $street,
-        protected string $houseNumber,
+        protected string $address,
+        protected string $houseNumber = '',
         protected string $city,
         protected string $postalCode,
         protected string $countryCode,
@@ -46,9 +46,9 @@ class Address
         return $this->companyName;
     }
 
-    public function getStreet(): string
+    public function getAddress(): string
     {
-        return $this->street;
+        return $this->address;
     }
 
     public function getHouseNumber(): string
@@ -114,7 +114,7 @@ class Address
             'name' => $this->getName(),
             'phoneNumber' => $this->getPhoneNumber(),
             'postalCode' => $this->getPostalCode(),
-            'street' => $this->getStreet(),
+            'address' => $this->getAddress(),
             'countryStateCode' => $this->getCountryStateCode(),
         ];
     }

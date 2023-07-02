@@ -554,7 +554,7 @@ class Client
             $parcelData = array_merge($parcelData, [
                 'name' => $shippingAddress->getName(),
                 'company_name' => $shippingAddress->getCompanyName() ?? '',
-                'address' => $shippingAddress->getStreet(),
+                'address' => $shippingAddress->getAddress(),
                 'address_2' => $shippingAddress->getAddressLine2() ?? '',
                 'house_number' => $shippingAddress->getHouseNumber(),
                 'city' => $shippingAddress->getCity(),
