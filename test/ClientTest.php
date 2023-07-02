@@ -276,7 +276,7 @@ class ClientTest extends TestCase
             });
 
         $parcel = $this->client->createParcel(
-            new Address('Dr. Coffee', null, 'Street', '123', 'Place', '7837', 'BM', 'drcoffee@drcoffee.dr', null, 'Unit 83'),
+            new Address('Dr. Coffee', null, 'Street', 'Place', '7837', 'BM', 'drcoffee@drcoffee.dr', '123', null, 'Unit 83'),
             null,
             null,
             null,
@@ -324,7 +324,7 @@ class ClientTest extends TestCase
                 );
             });
 
-        $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', '2134A', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '+31699999999', 'Above the skies', 'CS'));
+        $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '2134A', '+31699999999', 'Above the skies', 'CS'));
 
         $this->assertEquals('Some company', $parcel->getAddress()->getCompanyName());
     }
