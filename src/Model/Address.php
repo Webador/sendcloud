@@ -4,23 +4,34 @@ namespace JouwWeb\SendCloud\Model;
 
 class Address
 {
+    /** Street parsed from address by Sendcloud. */
+    protected ?string $street = null;
+
     public static function fromParcelData(array $data): self
     {
-        return new self(
+        $address = new self(
             (string)$data['name'],
             (string)$data['company_name'],
-            (string)$data['address_divided']['street'],
-            (string)$data['address_divided']['house_number'],
+            (string)$data['address'],
             (string)$data['city'],
             (string)$data['postal_code'],
             (string)$data['country']['iso_2'],
             (string)$data['email'],
+            (string)$data['address_divided']['house_number'],
             ((string)$data['telephone'] ?: null),
             ((string)$data['address_2'] ?: null),
             ((string)$data['to_state'] ?: null)
         );
+
+        $address->street = (string)$data['address_divided']['street'];
+
+        return $address;
     }
 
+    /**
+     * @param string $address Full address line 1 including house number, unless explicitly specifying {@see $houseNumber}.
+     * @param string|null $houseNumber Will be added onto {@see $address}. Leave out if address already contains a house number.
+     */
     public function __construct(
         protected string $name,
         protected ?string $companyName,
@@ -29,7 +40,7 @@ class Address
         protected string $postalCode,
         protected string $countryCode,
         protected string $emailAddress,
-        protected string $houseNumber = '',
+        protected ?string $houseNumber = null,
         protected ?string $phoneNumber = null,
         protected ?string $addressLine2 = null,
         protected ?string $countryStateCode = null
@@ -71,7 +82,12 @@ class Address
         return $this->emailAddress;
     }
 
-    public function getHouseNumber(): string
+    public function getStreet(): ?string
+    {
+        return $this->street;
+    }
+
+    public function getHouseNumber(): ?string
     {
         return $this->houseNumber;
     }
@@ -110,11 +126,12 @@ class Address
             'countryCode' => $this->getCountryCode(),
             'displayName' => $this->getDisplayName(),
             'emailAddress' => $this->getEmailAddress(),
-            'houseNumber' => $this->getHouseNumber(),
             'name' => $this->getName(),
             'phoneNumber' => $this->getPhoneNumber(),
             'postalCode' => $this->getPostalCode(),
             'address' => $this->getAddress(),
+            'street' => $this->getStreet(),
+            'houseNumber' => $this->getHouseNumber(),
             'countryStateCode' => $this->getCountryStateCode(),
         ];
     }
