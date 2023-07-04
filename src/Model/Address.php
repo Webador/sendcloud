@@ -4,32 +4,43 @@ namespace JouwWeb\SendCloud\Model;
 
 class Address
 {
+    /** Street parsed from address by Sendcloud. */
+    protected ?string $street = null;
+
     public static function fromParcelData(array $data): self
     {
-        return new self(
+        $address = new self(
             (string)$data['name'],
             (string)$data['company_name'],
-            (string)$data['address_divided']['street'],
-            (string)$data['address_divided']['house_number'],
+            (string)$data['address'],
             (string)$data['city'],
             (string)$data['postal_code'],
             (string)$data['country']['iso_2'],
             (string)$data['email'],
+            (string)$data['address_divided']['house_number'],
             ((string)$data['telephone'] ?: null),
             ((string)$data['address_2'] ?: null),
             ((string)$data['to_state'] ?: null)
         );
+
+        $address->street = (string)$data['address_divided']['street'];
+
+        return $address;
     }
 
+    /**
+     * @param string $addressLine1 Full address line 1. Includes house number unless explicitly specifying {@see $houseNumber}.
+     * @param string|null $houseNumber Will be added onto {@see $addressLine1}. Leave out if {@see $addressLine1} already contains a house number.
+     */
     public function __construct(
         protected string $name,
         protected ?string $companyName,
-        protected string $street,
-        protected string $houseNumber,
+        protected string $addressLine1,
         protected string $city,
         protected string $postalCode,
         protected string $countryCode,
         protected string $emailAddress,
+        protected ?string $houseNumber = null,
         protected ?string $phoneNumber = null,
         protected ?string $addressLine2 = null,
         protected ?string $countryStateCode = null
@@ -46,14 +57,9 @@ class Address
         return $this->companyName;
     }
 
-    public function getStreet(): string
+    public function getAddressLine1(): string
     {
-        return $this->street;
-    }
-
-    public function getHouseNumber(): string
-    {
-        return $this->houseNumber;
+        return $this->addressLine1;
     }
 
     public function getCity(): string
@@ -74,6 +80,16 @@ class Address
     public function getEmailAddress(): string
     {
         return $this->emailAddress;
+    }
+
+    public function getStreet(): ?string
+    {
+        return $this->street;
+    }
+
+    public function getHouseNumber(): ?string
+    {
+        return $this->houseNumber;
     }
 
     public function getPhoneNumber(): ?string
@@ -110,11 +126,12 @@ class Address
             'countryCode' => $this->getCountryCode(),
             'displayName' => $this->getDisplayName(),
             'emailAddress' => $this->getEmailAddress(),
-            'houseNumber' => $this->getHouseNumber(),
             'name' => $this->getName(),
             'phoneNumber' => $this->getPhoneNumber(),
             'postalCode' => $this->getPostalCode(),
+            'address' => $this->getAddressLine1(),
             'street' => $this->getStreet(),
+            'houseNumber' => $this->getHouseNumber(),
             'countryStateCode' => $this->getCountryStateCode(),
         ];
     }

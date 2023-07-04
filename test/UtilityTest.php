@@ -37,7 +37,9 @@ class UtilityTest extends TestCase
         $event = $client->parseWebhookRequest($request);
 
         $this->assertEquals(WebhookEvent::TYPE_PARCEL_STATUS_CHANGED, $event->getType());
+        $this->assertEquals('Insulindelaan 115', $event->getParcel()->getAddress()->getAddressLine1());
         $this->assertEquals('Insulindelaan', $event->getParcel()->getAddress()->getStreet());
+        $this->assertEquals('115', $event->getParcel()->getAddress()->getHouseNumber());
         $this->assertEquals(new \DateTimeImmutable('2018-05-02 14:38:05.993'), $event->getCreated());
         $this->assertCount(1, $event->getPayload());
         $this->assertArrayHasKey('parcel', $event->getPayload());
