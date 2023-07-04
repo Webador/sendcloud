@@ -554,7 +554,7 @@ class Client
             $parcelData = array_merge($parcelData, [
                 'name' => $shippingAddress->getName(),
                 'company_name' => $shippingAddress->getCompanyName() ?? '',
-                'address' => $shippingAddress->getAddress(),
+                'address' => $shippingAddress->getAddressLine1(),
                 'address_2' => $shippingAddress->getAddressLine2() ?? '',
                 'house_number' => $shippingAddress->getHouseNumber() ?? '',
                 'city' => $shippingAddress->getCity(),
@@ -643,7 +643,7 @@ class Client
                 $parcelData = array_merge($parcelData, [
                     'from_name' => $senderAddress->getName(),
                     'from_company_name' => $senderAddress->getCompanyName() ?? '',
-                    'from_address_1' => $senderAddress->getAddress(),
+                    'from_address_1' => $senderAddress->getAddressLine1(),
                     'from_address_2' => $senderAddress->getAddressLine2() ?? '',
                     'from_house_number' => $senderAddress->getHouseNumber() ?? '',
                     'from_city' => $senderAddress->getCity(),

@@ -29,13 +29,13 @@ class Address
     }
 
     /**
-     * @param string $address Full address line 1 including house number, unless explicitly specifying {@see $houseNumber}.
-     * @param string|null $houseNumber Will be added onto {@see $address}. Leave out if address already contains a house number.
+     * @param string $addressLine1 Full address line 1. Includes house number unless explicitly specifying {@see $houseNumber}.
+     * @param string|null $houseNumber Will be added onto {@see $addressLine1}. Leave out if {@see $addressLine1} already contains a house number.
      */
     public function __construct(
         protected string $name,
         protected ?string $companyName,
-        protected string $address,
+        protected string $addressLine1,
         protected string $city,
         protected string $postalCode,
         protected string $countryCode,
@@ -57,9 +57,9 @@ class Address
         return $this->companyName;
     }
 
-    public function getAddress(): string
+    public function getAddressLine1(): string
     {
-        return $this->address;
+        return $this->addressLine1;
     }
 
     public function getCity(): string
@@ -129,7 +129,7 @@ class Address
             'name' => $this->getName(),
             'phoneNumber' => $this->getPhoneNumber(),
             'postalCode' => $this->getPostalCode(),
-            'address' => $this->getAddress(),
+            'address' => $this->getAddressLine1(),
             'street' => $this->getStreet(),
             'houseNumber' => $this->getHouseNumber(),
             'countryStateCode' => $this->getCountryStateCode(),
