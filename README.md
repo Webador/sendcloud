@@ -30,23 +30,33 @@ foreach ($client->getShippingMethods() as $shippingMethod) {
 try {
     // Most of these arguments are optional and will fall back to defaults configured in Sendcloud
     $parcel = $client->createParcel(
-        new Address('Customer name', 'Customer company name', 'Customer street', '4A', 'City', '9999ZZ', 'NL', 'test@test.test', '+31612345678'),
-        null, // Service point ID
-        '20190001', // Order number
-        2500, // Weight (2.5kg)
+        shippingAddress: new Address(
+            name: 'John Doe',
+            companyName: 'Big Box Co.',
+            addressLine1: 'Office Street 2834A',
+            city: 'Metropolis',
+            postalCode: '9999ZZ',
+            countryCode: 'NL',
+            emailAddress: 'john@bigbox.co',
+            phoneNumber: '+31612345678'
+        ),
+        servicePointId: null,
+        orderNumber: '20190001',
+        weight: 2500, // 2.5kg
         // Below options are only required when shipping outside the EU
-        'customsInvoiceNumber',
-        Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS,
-        [
+        customsInvoiceNumber: 'CI-8329823',
+        customsShipmentType: Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS,
+        items: [
             new ParcelItem('green tea', 1, 123, 15.20, '090210', 'EC'),
             new ParcelItem('cardboard', 3, 50, 0.20, '090210', 'NL'),
-        ]
+        ],
+        postNumber: 'PO BOX 42',
     );
 
     $parcel = $client->createLabel(
-        $parcel,
-        8, // Shipping method ID
-        null // Default sender address
+        parcel: $parcel,
+        shippingMethod: 8,
+        senderAddress: null, // Default sender address.
     );
 
     $pdf = $client->getLabelPdf($parcel, Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT);
