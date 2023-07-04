@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud\Model;
+namespace JouwWeb\Sendcloud\Model;
 
 class WebhookEvent
 {

@@ -23,12 +23,12 @@
     },
     "autoload": {
         "psr-4": {
-            "JouwWeb\\SendCloud\\": "src"
+            "JouwWeb\\Sendcloud\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Test\\JouwWeb\\SendCloud\\": "test"
+            "Test\\JouwWeb\\Sendcloud\\": "test"
         }
     },
     "config": {

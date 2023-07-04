@@ -1,22 +1,22 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\Sendcloud;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Utils;
-use JouwWeb\SendCloud\Exception\SendCloudClientException;
-use JouwWeb\SendCloud\Exception\SendCloudRequestException;
-use JouwWeb\SendCloud\Exception\SendCloudStateException;
-use JouwWeb\SendCloud\Exception\SendCloudWebhookException;
-use JouwWeb\SendCloud\Model\Address;
-use JouwWeb\SendCloud\Model\Parcel;
-use JouwWeb\SendCloud\Model\ParcelItem;
-use JouwWeb\SendCloud\Model\SenderAddress;
-use JouwWeb\SendCloud\Model\ShippingMethod;
-use JouwWeb\SendCloud\Model\User;
-use JouwWeb\SendCloud\Model\WebhookEvent;
+use JouwWeb\Sendcloud\Exception\SendcloudClientException;
+use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
+use JouwWeb\Sendcloud\Exception\SendcloudStateException;
+use JouwWeb\Sendcloud\Exception\SendcloudWebhookException;
+use JouwWeb\Sendcloud\Model\Address;
+use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelItem;
+use JouwWeb\Sendcloud\Model\SenderAddress;
+use JouwWeb\Sendcloud\Model\ShippingMethod;
+use JouwWeb\Sendcloud\Model\User;
+use JouwWeb\Sendcloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -58,7 +58,7 @@ class Client
     /**
      * Fetches basic details about the Sendcloud account.
      *
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function getUser(): User
     {
@@ -77,7 +77,7 @@ class Client
      * account's sender addresses will be retrieved when null.
      * @param bool $returnMethodsOnly When true, methods for making a return are returned instead.
      * @return ShippingMethod[]
-     * @throws SendCloudClientException
+     * @throws SendcloudClientException
      */
     public function getShippingMethods(
         ?int $servicePointId = null,
@@ -151,7 +151,7 @@ class Client
      * @param ?ShippingMethod $shippingMethod
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function createParcel(
         Address $shippingAddress,
@@ -212,7 +212,7 @@ class Client
      * @param int $quantity Number of parcels to generate for multi-collo shipment.
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel[]
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function createMultiParcel(
         Address $shippingAddress,
@@ -282,7 +282,7 @@ class Client
     /**
      * Update details of an existing parcel.
      *
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function updateParcel(Parcel|int $parcel, Address $shippingAddress): Parcel
     {
@@ -310,16 +310,15 @@ class Client
 
             return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
-            throw $this->parseGuzzleException($exception, 'Could not update parcel in SendCloud.');
+            throw $this->parseGuzzleException($exception, 'Could not update parcel in Sendcloud.');
         }
     }
 
     /**
      * Request a label for an existing parcel.
-
-     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
+ * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress): Parcel
     {
@@ -354,7 +353,7 @@ class Client
     /**
      * Cancels or deletes a parcel (depending on status). Returns whether the parcel was successfully cancelled.
      *
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function cancelParcel(Parcel|int $parcel): bool
     {
@@ -381,7 +380,7 @@ class Client
      *
      * @param int $format `Parcel::LABEL_FORMATS`
      * @return string PDF data.
-     * @throws SendCloudClientException
+     * @throws SendcloudClientException
      */
     public function getLabelPdf(Parcel|int $parcel, int $format): string
     {
@@ -398,7 +397,7 @@ class Client
         $labelUrl = $parcel->getLabelUrl($format);
 
         if (!$labelUrl) {
-            throw new SendCloudStateException('SendCloud parcel does not have any labels.');
+            throw new SendcloudStateException('Sendcloud parcel does not have any labels.');
         }
 
         try {
@@ -415,7 +414,7 @@ class Client
      * @param array<Parcel|int> $parcels
      * @param int $format One of `Parcel::LABEL_FORMATS`. The A4 formats will contain up to 4 labels per page.
      * @return string PDF data.
-     * @throws SendCloudClientException
+     * @throws SendcloudClientException
      */
     public function getBulkLabelPdf(array $parcels, int $format): string
     {
@@ -445,7 +444,7 @@ class Client
         $labelData = json_decode((string)$response->getBody(), true);
         $labelUrl = Utility::getLabelUrlFromData($labelData, $format);
         if (!$labelUrl) {
-            throw new SendCloudStateException('No label URL could be obtained from the response.');
+            throw new SendcloudStateException('No label URL could be obtained from the response.');
         }
 
         try {
@@ -456,10 +455,10 @@ class Client
     }
 
     /**
-     * Fetches the sender addresses configured in SendCloud.
+     * Fetches the sender addresses configured in Sendcloud.
      *
      * @return SenderAddress[]
-     * @throws SendCloudRequestException
+     * @throws SendcloudRequestException
      */
     public function getSenderAddresses(): array
     {
@@ -476,9 +475,9 @@ class Client
     }
 
     /**
-     * Retrieves current parcel data from SendCloud.
+     * Retrieves current parcel data from Sendcloud.
      *
-     * @throws SendCloudClientException
+     * @throws SendcloudClientException
      */
     public function getParcel(Parcel|int $parcel): Parcel
     {
@@ -493,7 +492,7 @@ class Client
     /**
      * Parse a webhook event using the client's secret key. See {@see Utility::parseWebhookRequest()} for specifics.
      *
-     * @throws SendCloudWebhookException
+     * @throws SendcloudWebhookException
      */
     public function parseWebhookRequest(RequestInterface $request): WebhookEvent
     {
@@ -523,10 +522,10 @@ class Client
     }
 
     /**
-     * Returns the given arguments as data in SendCloud parcel format.
+     * Returns the given arguments as data in Sendcloud parcel format.
      *
      * @param ShippingMethod|int|null $shippingMethod Required if requesting a label.
-     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick SendCloud's default. An Address will
+     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      */
@@ -678,9 +677,9 @@ class Client
     protected function parseGuzzleException(
         TransferException $exception,
         string $defaultMessage
-    ): SendCloudRequestException {
+    ): SendcloudRequestException {
         $message = $defaultMessage;
-        $code = SendCloudRequestException::CODE_UNKNOWN;
+        $code = SendcloudRequestException::CODE_UNKNOWN;
 
         $responseCode = null;
         $responseMessage = null;
@@ -691,25 +690,25 @@ class Client
         }
 
         if ($exception instanceof ConnectException) {
-            $message = 'Could not contact SendCloud API.';
-            $code = SendCloudRequestException::CODE_CONNECTION_FAILED;
+            $message = 'Could not contact Sendcloud API.';
+            $code = SendcloudRequestException::CODE_CONNECTION_FAILED;
         }
 
         // Precondition failed, parse response message to determine code of exception
         if ($exception->getCode() === 401) {
             $message = 'Invalid public/secret key combination.';
-            $code = SendCloudRequestException::CODE_UNAUTHORIZED;
+            $code = SendcloudRequestException::CODE_UNAUTHORIZED;
         } elseif ($exception->getCode() === 412) {
-            $message = 'SendCloud account is not fully configured yet.';
+            $message = 'Sendcloud account is not fully configured yet.';
 
             if (stripos($responseMessage, 'no address data') !== false) {
-                $code = SendCloudRequestException::CODE_NO_ADDRESS_DATA;
+                $code = SendcloudRequestException::CODE_NO_ADDRESS_DATA;
             } elseif (stripos($responseMessage, 'not allowed to announce') !== false) {
-                $code = SendCloudRequestException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
+                $code = SendcloudRequestException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
             }
         }
 
-        return new SendCloudRequestException($message, $code, $exception, $responseCode, $responseMessage);
+        return new SendcloudRequestException($message, $code, $exception, $responseCode, $responseMessage);
     }
 
     protected function parseParcelArgument(Parcel|int $parcel): int

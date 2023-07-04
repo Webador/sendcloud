@@ -1,8 +1,8 @@
 <?php
 
-namespace JouwWeb\SendCloud\Exception;
+namespace JouwWeb\Sendcloud\Exception;
 
-class SendCloudRequestException extends SendCloudClientException
+class SendcloudRequestException extends SendcloudClientException
 {
     public const CODE_UNKNOWN = 0;
     public const CODE_NO_ADDRESS_DATA = 1;
@@ -20,10 +20,10 @@ class SendCloudRequestException extends SendCloudClientException
 
     public function __construct(
         string $message = '',
-        int $code = SendCloudRequestException::CODE_UNKNOWN,
+        int $code = SendcloudRequestException::CODE_UNKNOWN,
         \Throwable $previous = null,
-        protected ?int $sendCloudCode = null,
-        protected ?string $sendCloudMessage = null
+        protected ?int $sendcloudCode = null,
+        protected ?string $sendcloudMessage = null
     ) {
         parent::__construct($message, $code, $previous);
     }
@@ -31,16 +31,16 @@ class SendCloudRequestException extends SendCloudClientException
     /**
      * Returns the code reported by Sendcloud when available. This usually equals the HTTP status code.
      */
-    public function getSendCloudCode(): ?int
+    public function getSendcloudCode(): ?int
     {
-        return $this->sendCloudCode;
+        return $this->sendcloudCode;
     }
 
     /**
      * Returns the error message reported by Sendcloud when available.
      */
-    public function getSendCloudMessage(): ?string
+    public function getSendcloudMessage(): ?string
     {
-        return $this->sendCloudMessage;
+        return $this->sendcloudMessage;
     }
 }

@@ -1,17 +1,17 @@
 <?php
 
-namespace Test\JouwWeb\SendCloud;
+namespace Test\JouwWeb\Sendcloud;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
-use JouwWeb\SendCloud\Client;
-use JouwWeb\SendCloud\Exception\SendCloudRequestException;
-use JouwWeb\SendCloud\Model\Address;
-use JouwWeb\SendCloud\Model\Parcel;
-use JouwWeb\SendCloud\Model\ParcelItem;
-use JouwWeb\SendCloud\Model\ShippingMethod;
+use JouwWeb\Sendcloud\Client;
+use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
+use JouwWeb\Sendcloud\Model\Address;
+use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelItem;
+use JouwWeb\Sendcloud\Model\ShippingMethod;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -40,13 +40,13 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"user":{"address":"Insulindelaan 115","city":"Eindhoven","company_logo":null,"company_name":"SendCloud","data":[],"email":"johndoe@sendcloud.nl","invoices":[{"date":"05-06-201811:58:52","id":1,"isPayed":false,"items":"https://local.sendcloud.sc/api/v2/user/invoices/1","price_excl":77.4,"price_incl":93.65,"ref":"1","type":"periodic"}],"modules":[{"activated":true,"id":5,"name":"SendCloudClient","settings":null,"short_name":"sendcloud_client"},{"id":3,"name":"PrestashopIntegration","settings":{"url_webshop":"http://localhost/testing/prestashop","api_key":"O8ALXHMM24QULWM213CC6SGQ5VDJKC8W"},"activated":true,"short_name":"prestashop"}],"postal_code":"5642CV","registered":"2018-05-2912:52:51","telephone":"+31626262626","username":"johndoe"}}'
+            '{"user":{"address":"Insulindelaan 115","city":"Eindhoven","company_logo":null,"company_name":"Sendcloud","data":[],"email":"johndoe@sendcloud.nl","invoices":[{"date":"05-06-201811:58:52","id":1,"isPayed":false,"items":"https://local.sendcloud.sc/api/v2/user/invoices/1","price_excl":77.4,"price_incl":93.65,"ref":"1","type":"periodic"}],"modules":[{"activated":true,"id":5,"name":"SendcloudClient","settings":null,"short_name":"sendcloud_client"},{"id":3,"name":"PrestashopIntegration","settings":{"url_webshop":"http://localhost/testing/prestashop","api_key":"O8ALXHMM24QULWM213CC6SGQ5VDJKC8W"},"activated":true,"short_name":"prestashop"}],"postal_code":"5642CV","registered":"2018-05-2912:52:51","telephone":"+31626262626","username":"johndoe"}}'
         ));
 
         $user = $this->client->getUser();
 
         $this->assertEquals('johndoe', $user->getUsername());
-        $this->assertEquals('SendCloud', $user->getCompanyName());
+        $this->assertEquals('Sendcloud', $user->getCompanyName());
         $this->assertEquals('+31626262626', $user->getPhoneNumber());
         $this->assertEquals('Insulindelaan 115', $user->getAddress());
         $this->assertEquals('Eindhoven', $user->getCity());
@@ -393,11 +393,11 @@ class ClientTest extends TestCase
 
         try {
             $this->client->getUser();
-            $this->fail('getUser completed successfully while a SendCloudRequestException was expected.');
-        } catch (SendCloudRequestException $exception) {
-            $this->assertEquals(SendCloudRequestException::CODE_UNAUTHORIZED, $exception->getCode());
-            $this->assertEquals(401, $exception->getSendCloudCode());
-            $this->assertEquals('Invalid username/password.', $exception->getSendCloudMessage());
+            $this->fail('getUser completed successfully while a SendcloudRequestException was expected.');
+        } catch (SendcloudRequestException $exception) {
+            $this->assertEquals(SendcloudRequestException::CODE_UNAUTHORIZED, $exception->getCode());
+            $this->assertEquals(401, $exception->getSendcloudCode());
+            $this->assertEquals('Invalid username/password.', $exception->getSendcloudMessage());
         }
     }
 
@@ -410,11 +410,11 @@ class ClientTest extends TestCase
 
         try {
             $this->client->getUser();
-            $this->fail('getUser completed successfully while a SendCloudRequestException was expected.');
-        } catch (SendCloudRequestException $exception) {
-            $this->assertEquals(SendCloudRequestException::CODE_CONNECTION_FAILED, $exception->getCode());
-            $this->assertNull($exception->getSendCloudCode());
-            $this->assertNull($exception->getSendCloudMessage());
+            $this->fail('getUser completed successfully while a SendcloudRequestException was expected.');
+        } catch (SendcloudRequestException $exception) {
+            $this->assertEquals(SendcloudRequestException::CODE_CONNECTION_FAILED, $exception->getCode());
+            $this->assertNull($exception->getSendcloudCode());
+            $this->assertNull($exception->getSendcloudMessage());
         }
     }
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace JouwWeb\SendCloud;
+namespace JouwWeb\Sendcloud;
 
-use JouwWeb\SendCloud\Exception\SendCloudWebhookException;
-use JouwWeb\SendCloud\Model\Parcel;
-use JouwWeb\SendCloud\Model\WebhookEvent;
+use JouwWeb\Sendcloud\Exception\SendcloudWebhookException;
+use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
 
 class Utility
@@ -19,7 +19,7 @@ class Utility
      * @param string|null $secretKey Pass a secret key to verify the webhook request or null to disable verification. Do
      * make sure to verify the request with {@see verifyWebhookRequest()} some other time (E.g., after fetching a secret
      * key for the parsed request).
-     * @throws SendCloudWebhookException Thrown when the payload fails to validate with the given secret key.
+     * @throws SendcloudWebhookException Thrown when the payload fails to validate with the given secret key.
      */
     public static function parseWebhookRequest(RequestInterface $request, ?string $secretKey): WebhookEvent
     {
@@ -30,9 +30,9 @@ class Utility
         $data = json_decode((string)$request->getBody(), true);
 
         if (!isset($data['action'])) {
-            throw new SendCloudWebhookException(
+            throw new SendcloudWebhookException(
                 'Webhook request does not contain an action and is probably malformed.',
-                SendCloudWebhookException::CODE_INVALID_REQUEST
+                SendcloudWebhookException::CODE_INVALID_REQUEST
             );
         }
 
@@ -43,23 +43,23 @@ class Utility
      * Validates an incoming webhook request using the given secret key. If the request fails to validate an exception
      * will be thrown.
      *
-     * @throws SendCloudWebhookException
+     * @throws SendcloudWebhookException
      */
     public static function verifyWebhookRequest(RequestInterface $request, string $secretKey): void
     {
-        $signatureHeader = $request->getHeader('SendCloud-Signature');
+        $signatureHeader = $request->getHeader('Sendcloud-Signature');
         if (count($signatureHeader) === 0) {
-            throw new SendCloudWebhookException(
+            throw new SendcloudWebhookException(
                 'Webhook request does not specify a signature header.',
-                SendCloudWebhookException::CODE_INVALID_REQUEST
+                SendcloudWebhookException::CODE_INVALID_REQUEST
             );
         }
         $signatureHeader = reset($signatureHeader);
 
         if (hash_hmac('sha256', (string)$request->getBody(), $secretKey) !== $signatureHeader) {
-            throw new SendCloudWebhookException(
+            throw new SendcloudWebhookException(
                 'Hashed webhook payload does not match Sendcloud-supplied header.',
-                SendCloudWebhookException::CODE_VERIFICATION_FAILED
+                SendcloudWebhookException::CODE_VERIFICATION_FAILED
             );
         }
     }

@@ -1,8 +1,8 @@
 <?php
 
-namespace JouwWeb\SendCloud\Model;
+namespace JouwWeb\Sendcloud\Model;
 
-use JouwWeb\SendCloud\Utility;
+use JouwWeb\Sendcloud\Utility;
 
 class Parcel
 {

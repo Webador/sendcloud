@@ -1,6 +1,6 @@
 <?php
 
-namespace JouwWeb\SendCloud\Model;
+namespace JouwWeb\Sendcloud\Model;
 
 /**
  * A product type that is contained in a parcel.

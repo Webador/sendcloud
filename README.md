@@ -9,12 +9,12 @@ please request it through a GitHub issue or pull request.
 ## Example
 
 ```php
-use JouwWeb\SendCloud\Client;
-use JouwWeb\SendCloud\Model\Address;
-use JouwWeb\SendCloud\Model\Parcel;
-use JouwWeb\SendCloud\Model\ParcelItem;
-use JouwWeb\SendCloud\Model\WebhookEvent;
-use JouwWeb\SendCloud\Exception\SendCloudRequestException;
+use JouwWeb\Sendcloud\Client;
+use JouwWeb\Sendcloud\Model\Address;
+use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelItem;
+use JouwWeb\Sendcloud\Model\WebhookEvent;
+use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 
 $client = new Client('your_public_key', 'your_secret_key');
 
@@ -52,7 +52,7 @@ try {
     $pdf = $client->getLabelPdf($parcel, Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT);
 
     var_dump($parcel, $pdf);
-} catch (SendCloudRequestException $exception) {
+} catch (SendcloudRequestException $exception) {
     echo $exception->getMessage();
 }
 
