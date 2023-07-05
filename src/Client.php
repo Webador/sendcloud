@@ -639,6 +639,14 @@ class Client
             if ($senderAddress instanceof SenderAddress) {
                 $parcelData['sender_address'] = $senderAddress->getId();
             } elseif ($senderAddress instanceof Address) {
+                // API will assert that house number is passed separately. See
+                // https://github.com/Webador/sendcloud/issues/25.
+                if (!$senderAddress->getHouseNumber()) {
+                    throw new \InvalidArgumentException(
+                        'House number must be passed separately on Address instance passed as sender address.'
+                    );
+                }
+
                 $parcelData = array_merge($parcelData, [
                     'from_name' => $senderAddress->getName(),
                     'from_company_name' => $senderAddress->getCompanyName() ?? '',
