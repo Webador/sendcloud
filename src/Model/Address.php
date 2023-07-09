@@ -67,6 +67,11 @@ class Address
         return $this->city;
     }
 
+    public function getPostalCode(): ?string
+    {
+        return $this->postalCode;
+    }
+
     public function getCountryCode(): string
     {
         return $this->countryCode;
@@ -80,11 +85,6 @@ class Address
     public function getStreet(): ?string
     {
         return $this->street;
-    }
-
-    public function getPostalCode(): ?string
-    {
-        return $this->postalCode;
     }
 
     public function getHouseNumber(): ?string
