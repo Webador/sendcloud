@@ -14,7 +14,7 @@ class Address
             (string)$data['company_name'],
             (string)$data['address'],
             (string)$data['city'],
-            (string)$data['postal_code'],
+            ((string)$data['postal_code'] ?: null),
             (string)$data['country']['iso_2'],
             (string)$data['email'],
             (string)$data['address_divided']['house_number'],
@@ -37,7 +37,7 @@ class Address
         protected ?string $companyName,
         protected string $addressLine1,
         protected string $city,
-        protected string $postalCode,
+        protected ?string $postalCode,
         protected string $countryCode,
         protected string $emailAddress,
         protected ?string $houseNumber = null,
@@ -67,11 +67,6 @@ class Address
         return $this->city;
     }
 
-    public function getPostalCode(): string
-    {
-        return $this->postalCode;
-    }
-
     public function getCountryCode(): string
     {
         return $this->countryCode;
@@ -85,6 +80,11 @@ class Address
     public function getStreet(): ?string
     {
         return $this->street;
+    }
+
+    public function getPostalCode(): ?string
+    {
+        return $this->postalCode;
     }
 
     public function getHouseNumber(): ?string
