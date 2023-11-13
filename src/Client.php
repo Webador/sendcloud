@@ -17,6 +17,7 @@ use JouwWeb\Sendcloud\Model\SenderAddress;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\User;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
+use JouwWeb\Sendcloud\Model\ServicePoint;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -518,6 +519,23 @@ class Client
             }
 
             throw $exception;
+        }
+    }
+
+    /**
+     * Return corresponding service point for the given id.
+     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Fget-a-service-point
+     * 
+     * @param int $service_point_id
+     * @return \JouwWeb\Sendcloud\Model\ServicePoint
+     */
+    public function getServicePoint(int $service_point_id) : ServicePoint
+    {
+        try {
+            $response = $this->guzzleClient->get('service-point/' . $service_point_id);
+            return ServicePoint::fromData(json_decode((string)$response->getBody(), true));
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve service point.');
         }
     }
 
