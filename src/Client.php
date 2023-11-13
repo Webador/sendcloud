@@ -522,6 +522,120 @@ class Client
         }
     }
 
+
+    
+    /**
+     * Summary of searchServicePoints
+     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Flist-service-points
+     * 
+     * @param string $country A country ISO 2 code (Example : 'NL')
+     * @param ?string $address Address of the destination address. Can accept postal code instead of the street and the house number. (Example : 'Stadhuisplein 10')
+     * @param ?string $carrier A comma-separated list of carrier codes (stringified) (Example : 'postnl,dpd')
+     * @param ?string $city City of the destination address. (Example : 'Eindhoven')
+     * @param ?string $house_number House number of the destination address. (Example : '10')
+     * @param ?string $latitude Used as a reference point to calculate the distance of the service point to the provided location.
+     * @param ?string $longitude Used as a reference point to calculate the distance of the service point to the provided location.
+     * @param ?string $ne_latitude Latitude of the northeast corner of the bounding box.
+     * @param ?string $ne_longitude Longitude of the northeast corner of the bounding box.
+     * @param ?string $postal_code Postal code of the destination address. Using postal_code will return you service points located around that particular postal code. (Example : '5611 EM')
+     * @param ?string $pudo_id DPD-specific query parameter. (<= 7 characters)
+     * @param ?int $radius Radius (in meter) of a bounding circle. Can be used instead of the ne_latitude, ne_longitude, sw_latitude, and sw_longitude parameters to define a bounding box. By default, it’s 100 meters. Minimum value: 100 meters. Maximum value: 50 000 meters.
+     * @param ?string $shop_type Filters results by their shop type.
+     * @param ?string $sw_latitude Latitude of the southwest corner of the bounding box.
+     * @param ?string $sw_longitude Longitude of the southwest corner of the bounding box.
+     * @param ?float $weight Weight (in kg.) of the parcel to be shipped to the service points. Certain carriers impose limits for certain service points that cannot accept parcels above a certain weight limit.
+     * 
+     * @return array<ServicePoint>
+     */
+    public function searchServicePoints(
+        string $country,
+        ?string $address = null,
+        ?string $carrier = null,
+        ?string $city = null,
+        ?string $house_number = null,
+        ?string $latitude = null,
+        ?string $longitude = null,
+        ?string $ne_latitude = null,
+        ?string $ne_longitude = null,
+        ?string $postal_code = null,
+        ?string $pudo_id = null,
+        ?int $radius = null,
+        ?string $shop_type = null,
+        ?string $sw_latitude = null,
+        ?string $sw_longitude = null,
+        ?float $weight = null
+    ) : array
+    {
+        try {
+            // Construct query array
+            $query = [];
+            $query['country_id'] = $country;
+
+            if (isset($address)) {
+                $query['address'] = $address;
+            }
+            if (isset($carrier)) {
+                $query['carrier'] = $carrier;
+            }
+            if (isset($city)) {
+                $query['city'] = $city;
+            }
+            if (isset($house_number)) {
+                $query['house_number'] = $house_number;
+            }
+            if (isset($latitude)) {
+                $query['latitude'] = $latitude;
+            }
+            if (isset($longitude)) {
+                $query['longitude'] = $longitude;
+            }
+            if (isset($ne_latitude)) {
+                $query['ne_latitude'] = $ne_latitude;
+            }
+            if (isset($ne_longitude)) {
+                $query['ne_longitude'] = $ne_longitude;
+            }
+            if (isset($postal_code)) {
+                $query['postal_code'] = $postal_code;
+            }
+            if (isset($pudo_id)) {
+                $query['pudo_id'] = $pudo_id;
+            }
+            if (isset($radius)) {
+                $query['radius'] = $radius;
+            }
+            if (isset($shop_type)) {
+                $query['shop_type'] = $shop_type;
+            }
+            if (isset($sw_latitude)) {
+                $query['sw_latitude'] = $sw_latitude;
+            }
+            if (isset($sw_longitude)) {
+                $query['sw_longitude'] = $sw_longitude;
+            }
+            if (isset($weight)) {
+                $query['weight'] = $weight;
+            }
+            
+            // Send request
+            $response = $this->guzzleClient->get('service-point', [
+                'query' => $query,
+            ]);
+
+            // Decode and create ServicePoint objects
+            $json = json_decode((string)$response->getBody(), true);
+
+            $service_points = [];
+            foreach($json as $obj) {
+                $service_points[] = ServicePoint::fromData($obj);
+            }
+
+            return $service_points;
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, 'Could not retrieve service point.');
+        }
+    }
+
     /**
      * Return corresponding service point for the given id.
      * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Fget-a-service-point
