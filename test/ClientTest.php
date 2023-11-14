@@ -69,7 +69,7 @@ class ClientTest extends TestCase
             return new Response(
                 200,
                 [],
-                '{"shipping_methods": [{"service_point_input": "none","max_weight": "1.000","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
+                '{"shipping_methods": [{"service_point_input": "none","min_weight": "0.001","max_weight": "1.001","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
             );
         });
 
@@ -78,7 +78,7 @@ class ClientTest extends TestCase
         $this->assertCount(1, $shippingMethods);
         $this->assertEquals(1, $shippingMethods[0]->getId());
         $this->assertEquals(1, $shippingMethods[0]->getMinimumWeight());
-        $this->assertEquals(1000, $shippingMethods[0]->getMaximumWeight());
+        $this->assertEquals(1001, $shippingMethods[0]->getMaximumWeight());
         $this->assertEquals('carrier_code', $shippingMethods[0]->getCarrier());
         $this->assertEquals(['BE' => 350, 'NL' => 420], $shippingMethods[0]->getPrices());
         $this->assertEquals(420, $shippingMethods[0]->getPriceForCountry('NL'));

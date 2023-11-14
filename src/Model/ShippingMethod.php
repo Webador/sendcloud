@@ -11,11 +11,14 @@ class ShippingMethod
             $prices[$country['iso_2']] = (int)($country['price'] * 100);
         }
 
+        $min_weight = intval(ceil($data['min_weight'] * 1000));
+        $max_weight = intval(ceil($data['max_weight'] * 1000));
+
         return new self(
             (int)$data['id'],
             (string)$data['name'],
-            (int)($data['min_weight'] * 1000),
-            (int)($data['max_weight'] * 1000),
+            (int) $min_weight,
+            (int) $max_weight,
             (string)$data['carrier'],
             $prices,
             $data['service_point_input'] !== 'none',
