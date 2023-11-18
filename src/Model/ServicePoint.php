@@ -3,53 +3,54 @@
 namespace JouwWeb\Sendcloud\Model;
 
 /**
- * Implementation of sencloud service point object
- * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Flist-service-points
+ * Implementation of Sendcloud service point object.
+ *
+ * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Fget-a-service-point
  */
 class ServicePoint
 {
-    public static function fromData(array $data) : self
+    public static function fromData(array $data): self
     {
         return new self(
-            (int) $data['id'],
-            (string) $data['code'],
-            (bool) $data['is_active'],
-            isset($data['shop_type']) ? (string) $data['shop_type'] : null,
-            (array) $data['extra_data'],
-            (string) $data['name'],
-            (string) $data['street'],
-            (string) $data['house_number'],
-            (string) $data['postal_code'],
-            (string) $data['city'],
-            (string) $data['latitude'],
-            (string) $data['longitude'],
-            (string) $data['email'],
-            (string) $data['phone'],
-            (string) $data['homepage'],
-            (string) $data['carrier'],
-            (string) $data['country'],
-            (array) $data['formatted_opening_times'],
-            (bool) $data['open_tomorrow'],
-            (bool) $data['open_upcoming_week'],
-            (int) $data['distance']
+            (int)$data['id'],
+            (string)$data['code'],
+            (bool)$data['is_active'],
+            isset($data['shop_type']) ? (string)$data['shop_type'] : null,
+            (array)$data['extra_data'],
+            (string)$data['name'],
+            (string)$data['street'],
+            (string)$data['house_number'],
+            (string)$data['postal_code'],
+            (string)$data['city'],
+            (string)$data['latitude'],
+            (string)$data['longitude'],
+            (string)$data['email'],
+            (string)$data['phone'],
+            (string)$data['homepage'],
+            (string)$data['carrier'],
+            (string)$data['country'],
+            (array)$data['formatted_opening_times'],
+            (bool)$data['open_tomorrow'],
+            (bool)$data['open_upcoming_week'],
+            (int)$data['distance']
         );
     }
 
     /**
-     * @param array<string, string> $extra_data Can contain carrier specific data
-     * @param array<int, array<string>> $formatted_opening_times
+     * @param array<string, string> $extraData Can contain carrier specific data
+     * @param array<int, string[]> $formattedOpeningTimes
      * @param int $distance Distance between the reference point and the service point in meters.
      */
     public function __construct(
         protected int $id,
         protected string $code,
-        protected bool $is_active,
-        protected ?string $shop_type = null,
-        protected array $extra_data,
+        protected bool $isActive,
+        protected ?string $shopType,
+        protected array $extraData,
         protected string $name,
         protected string $street,
-        protected string $house_number,
-        protected string $postal_code,
+        protected string $houseNumber,
+        protected string $postalCode,
         protected string $city,
         protected string $latitude,
         protected string $longitude,
@@ -58,128 +59,125 @@ class ServicePoint
         protected string $homepage,
         protected string $carrier,
         protected string $country,
-        protected array $formatted_opening_times,
-        protected bool $open_tomorrow,
-        protected bool $open_upcoming_week,
-        protected int $distance
+        protected array $formattedOpeningTimes,
+        protected bool $openTomorrow,
+        protected bool $openUpcomingWeek,
+        protected int $distance,
     ) {
-
     }
 
-    /** Getters */
-
-    public function getId() : int
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function getCode() : string
+    public function getCode(): string
     {
         return $this->code;
     }
 
-    public function isActive() : bool
+    public function isActive(): bool
     {
-        return $this->is_active;
+        return $this->isActive;
     }
 
-    public function getShopType() : ?string
+    public function getShopType(): ?string
     {
-        return $this->shop_type;
+        return $this->shopType;
     }
 
     /**
-     * Can contain carrier specific data
+     * Can contain carrier specific data.
+     *
      * @return array<string, string>
      */
-    public function getExtraData() : array
+    public function getExtraData(): array
     {
-        return $this->extra_data;
+        return $this->extraData;
     }
 
-    public function getName() : string
+    public function getName(): string
     {
         return $this->name;
     }
 
-    public function getStreet() : string
-    {        
+    public function getStreet(): string
+    {
         return $this->street;
     }
 
-    public function getHouseNumber() : string
+    public function getHouseNumber(): string
     {
-        return $this->house_number;
+        return $this->houseNumber;
     }
 
-    public function getPostalCode() : string
+    public function getPostalCode(): string
     {
-        return $this->postal_code;
+        return $this->postalCode;
     }
 
-    public function getCity() : string
+    public function getCity(): string
     {
         return $this->city;
     }
 
-    public function getLatitude() : string
+    public function getLatitude(): string
     {
         return $this->latitude;
     }
 
-    public function getLongitude() : string
+    public function getLongitude(): string
     {
         return $this->longitude;
     }
 
-    public function getEmail() : string
+    public function getEmail(): string
     {
         return $this->email;
     }
 
-    public function getPhone() : string
+    public function getPhone(): string
     {
         return $this->phone;
     }
 
-    public function getHomepage() : string
+    public function getHomepage(): string
     {
         return $this->homepage;
     }
 
-    public function getCarrier() : string
+    public function getCarrier(): string
     {
         return $this->carrier;
     }
 
-    public function getCountry() : string
+    public function getCountry(): string
     {
         return $this->country;
     }
 
     /**
-     * @return array<int, array<string>>
+     * @return array<int, string[]>
      */
-    public function getFormattedOpeningTimes() : array
+    public function getFormattedOpeningTimes(): array
     {
-        return $this->formatted_opening_times;
+        return $this->formattedOpeningTimes;
     }
 
-    public function isOpenTomorrow() : bool
+    public function isOpenTomorrow(): bool
     {
-        return $this->open_tomorrow;
+        return $this->openTomorrow;
     }
 
-    public function isOpenUpcomingWeek() : bool
+    public function isOpenUpcomingWeek(): bool
     {
-        return $this->open_upcoming_week;
+        return $this->openUpcomingWeek;
     }
 
     /**
      * Distance between the reference point and the service point in meters.
-     * @return int
      */
-    public function getDistance() : int
+    public function getDistance(): int
     {
         return $this->distance;
     }

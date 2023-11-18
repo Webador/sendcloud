@@ -217,7 +217,7 @@ class ClientTest extends TestCase
 
         $this->assertCount(2, $parcels);
 
-        foreach($parcels as $key => $parcel) {
+        foreach ($parcels as $key => $parcel) {
             $id = $key == 0 ? 8293794 : 8293795;
 
             $this->assertEquals($id, $parcel->getId());
@@ -479,12 +479,7 @@ class ClientTest extends TestCase
         $this->assertEquals('pdfdata', $pdf);
     }
 
-    /**
-     * Test of 'service-point' search api endpoint
-     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Flist-service-points
-     * @return void
-     */
-    public function testSearchServicePoint() : void
+    public function testSearchServicePoint(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
@@ -495,19 +490,14 @@ class ClientTest extends TestCase
             ]'
         ));
 
-        $service_points = $this->client->searchServicePoints('NL');
+        $servicePoints = $this->client->searchServicePoints('NL');
 
-        $this->assertEquals(2, count($service_points));
-        $this->assertEquals(1, $service_points[0]->getID());
-        $this->assertEquals(2, $service_points[1]->getID());
+        $this->assertCount(2, $servicePoints);
+        $this->assertEquals(1, $servicePoints[0]->getID());
+        $this->assertEquals(2, $servicePoints[1]->getID());
     }
 
-    /**
-     * Test of 'service-point' api endpoint
-     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/service-points%2Foperations%2Fget-a-service-point (Response Example : RetrieveServicePoint)
-     * @return void
-     */
-    public function testGetServicePoint() : void
+    public function testGetServicePoint(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
@@ -515,59 +505,59 @@ class ClientTest extends TestCase
             '{"id":26,"code":"4c8181feec8f49fdbe67d9c9f6aaaf6f","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"DUMMY-3f1d6384391f45ce","street":"Sesamstraat","house_number":"40","postal_code":"5699YE","city":"Eindhoven","latitude":"51.440400","longitude":"5.475800","email":"devnull@sendcloud.nl","phone":"+31401234567","homepage":"https://www.sendcloud.nl","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["13:30 - 17:15"],"1":["09:00 - 12:00","13:30 - 17:15"],"2":["09:00 - 12:00","13:30 - 17:15"],"3":[],"4":["09:00 - 12:00","13:30 - 17:15"],"5":["09:00 - 12:00","13:30 - 17:15"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":361}'
         ));
 
-        $extra_data = [
-            'partner_name' => "PostNL",
-            'sales_channel' => "AFHAALPUNT",
-            'terminal_type' => "NRS",
-            'retail_network_id' => "PNPNL-01"
+        $extraData = [
+            'partner_name' => 'PostNL',
+            'sales_channel' => 'AFHAALPUNT',
+            'terminal_type' => 'NRS',
+            'retail_network_id' => 'PNPNL-01',
         ];
 
-        $formatted_opening_times = [
-            "0"=> [
-                "13:30 - 17:15"
+        $formattedOpeningTimes = [
+            '0' => [
+                '13:30 - 17:15',
             ],
-            "1" => [
-                "09:00 - 12:00",
-                "13:30 - 17:15"
+            '1' => [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
             ],
-            "2" =>  [
-                "09:00 - 12:00",
-                "13:30 - 17:15"
+            '2' =>  [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
             ],
-            "3" => [],
-            "4" =>  [
-                "09:00 - 12:00",
-                "13:30 - 17:15"
+            '3' => [],
+            '4' =>  [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
             ],
-            "5" => [
-                "09:00 - 12:00",
-                "13:30 - 17:15"
+            '5' => [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
             ],
-            "6" => []
+            '6' => [],
         ];
 
-        $service_point = $this->client->getServicePoint(26);
+        $servicePoint = $this->client->getServicePoint(26);
 
-        $this->assertEquals(26, $service_point->getId());
-        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $service_point->getCode());
-        $this->assertTrue($service_point->isActive());
-        $this->assertNull($service_point->getShopType());
-        $this->assertEquals($extra_data, $service_point->getExtraData());
-        $this->assertEquals('DUMMY-3f1d6384391f45ce', $service_point->getName());
-        $this->assertEquals('Sesamstraat', $service_point->getStreet());
-        $this->assertEquals('40', $service_point->getHouseNumber());
-        $this->assertEquals('5699YE', $service_point->getPostalCode());
-        $this->assertEquals('Eindhoven', $service_point->getCity());
-        $this->assertEquals('51.440400', $service_point->getLatitude());
-        $this->assertEquals('5.475800', $service_point->getLongitude());
-        $this->assertEquals('devnull@sendcloud.nl', $service_point->getEmail());
-        $this->assertEquals('+31401234567', $service_point->getPhone());
-        $this->assertEquals('https://www.sendcloud.nl', $service_point->getHomepage());
-        $this->assertEquals('postnl', $service_point->getCarrier());
-        $this->assertEquals('NL', $service_point->getCountry());
-        $this->assertEquals($formatted_opening_times, $service_point->getFormattedOpeningTimes());
-        $this->assertTrue($service_point->isOpenTomorrow());
-        $this->assertTrue($service_point->isOpenUpcomingWeek());
-        $this->assertEquals(361, $service_point->getDistance());
+        $this->assertEquals(26, $servicePoint->getId());
+        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->getCode());
+        $this->assertTrue($servicePoint->isActive());
+        $this->assertNull($servicePoint->getShopType());
+        $this->assertEquals($extraData, $servicePoint->getExtraData());
+        $this->assertEquals('DUMMY-3f1d6384391f45ce', $servicePoint->getName());
+        $this->assertEquals('Sesamstraat', $servicePoint->getStreet());
+        $this->assertEquals('40', $servicePoint->getHouseNumber());
+        $this->assertEquals('5699YE', $servicePoint->getPostalCode());
+        $this->assertEquals('Eindhoven', $servicePoint->getCity());
+        $this->assertEquals('51.440400', $servicePoint->getLatitude());
+        $this->assertEquals('5.475800', $servicePoint->getLongitude());
+        $this->assertEquals('devnull@sendcloud.nl', $servicePoint->getEmail());
+        $this->assertEquals('+31401234567', $servicePoint->getPhone());
+        $this->assertEquals('https://www.sendcloud.nl', $servicePoint->getHomepage());
+        $this->assertEquals('postnl', $servicePoint->getCarrier());
+        $this->assertEquals('NL', $servicePoint->getCountry());
+        $this->assertEquals($formattedOpeningTimes, $servicePoint->getFormattedOpeningTimes());
+        $this->assertTrue($servicePoint->isOpenTomorrow());
+        $this->assertTrue($servicePoint->isOpenUpcomingWeek());
+        $this->assertEquals(361, $servicePoint->getDistance());
     }
 }
