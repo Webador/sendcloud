@@ -14,8 +14,8 @@ class ShippingMethod
         return new self(
             (int)$data['id'],
             (string)$data['name'],
-            (int) ceil($data['min_weight'] * 1000.0),
-            (int) ceil($data['max_weight'] * 1000.0),
+            (int)round($data['min_weight'] * 1000.0),
+            (int)round($data['max_weight'] * 1000.0),
             (string)$data['carrier'],
             $prices,
             $data['service_point_input'] !== 'none',

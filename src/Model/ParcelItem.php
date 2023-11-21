@@ -12,7 +12,7 @@ class ParcelItem
         return new self(
             (string)$data['description'],
             (int)$data['quantity'],
-            round(((float)$data['weight']) * 1000),
+            (int)round(((float)$data['weight']) * 1000),
             (float)$data['value'],
             isset($data['hs_code']) ? (string)$data['hs_code'] : null,
             isset($data['origin_country']) ? (string)$data['origin_country'] : null,
