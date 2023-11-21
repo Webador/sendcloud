@@ -217,7 +217,7 @@ class ClientTest extends TestCase
 
         $this->assertCount(2, $parcels);
 
-        foreach($parcels as $key => $parcel) {
+        foreach ($parcels as $key => $parcel) {
             $id = $key == 0 ? 8293794 : 8293795;
 
             $this->assertEquals($id, $parcel->getId());
@@ -477,5 +477,87 @@ class ClientTest extends TestCase
 
         $pdf = $this->client->getBulkLabelPdf([1234, $parcelMock], Parcel::LABEL_FORMAT_A4_TOP_LEFT);
         $this->assertEquals('pdfdata', $pdf);
+    }
+
+    public function testSearchServicePoint(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '[
+                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381},
+                {"id":2,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381}
+            ]'
+        ));
+
+        $servicePoints = $this->client->searchServicePoints('NL');
+
+        $this->assertCount(2, $servicePoints);
+        $this->assertEquals(1, $servicePoints[0]->getID());
+        $this->assertEquals(2, $servicePoints[1]->getID());
+    }
+
+    public function testGetServicePoint(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"id":26,"code":"4c8181feec8f49fdbe67d9c9f6aaaf6f","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"DUMMY-3f1d6384391f45ce","street":"Sesamstraat","house_number":"40","postal_code":"5699YE","city":"Eindhoven","latitude":"51.440400","longitude":"5.475800","email":"devnull@sendcloud.nl","phone":"+31401234567","homepage":"https://www.sendcloud.nl","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["13:30 - 17:15"],"1":["09:00 - 12:00","13:30 - 17:15"],"2":["09:00 - 12:00","13:30 - 17:15"],"3":[],"4":["09:00 - 12:00","13:30 - 17:15"],"5":["09:00 - 12:00","13:30 - 17:15"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":361}'
+        ));
+
+        $extraData = [
+            'partner_name' => 'PostNL',
+            'sales_channel' => 'AFHAALPUNT',
+            'terminal_type' => 'NRS',
+            'retail_network_id' => 'PNPNL-01',
+        ];
+
+        $formattedOpeningTimes = [
+            '0' => [
+                '13:30 - 17:15',
+            ],
+            '1' => [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
+            ],
+            '2' =>  [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
+            ],
+            '3' => [],
+            '4' =>  [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
+            ],
+            '5' => [
+                '09:00 - 12:00',
+                '13:30 - 17:15',
+            ],
+            '6' => [],
+        ];
+
+        $servicePoint = $this->client->getServicePoint(26);
+
+        $this->assertEquals(26, $servicePoint->getId());
+        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->getCode());
+        $this->assertTrue($servicePoint->isActive());
+        $this->assertNull($servicePoint->getShopType());
+        $this->assertEquals($extraData, $servicePoint->getExtraData());
+        $this->assertEquals('DUMMY-3f1d6384391f45ce', $servicePoint->getName());
+        $this->assertEquals('Sesamstraat', $servicePoint->getStreet());
+        $this->assertEquals('40', $servicePoint->getHouseNumber());
+        $this->assertEquals('5699YE', $servicePoint->getPostalCode());
+        $this->assertEquals('Eindhoven', $servicePoint->getCity());
+        $this->assertEquals('51.440400', $servicePoint->getLatitude());
+        $this->assertEquals('5.475800', $servicePoint->getLongitude());
+        $this->assertEquals('devnull@sendcloud.nl', $servicePoint->getEmail());
+        $this->assertEquals('+31401234567', $servicePoint->getPhone());
+        $this->assertEquals('https://www.sendcloud.nl', $servicePoint->getHomepage());
+        $this->assertEquals('postnl', $servicePoint->getCarrier());
+        $this->assertEquals('NL', $servicePoint->getCountry());
+        $this->assertEquals($formattedOpeningTimes, $servicePoint->getFormattedOpeningTimes());
+        $this->assertTrue($servicePoint->isOpenTomorrow());
+        $this->assertTrue($servicePoint->isOpenUpcomingWeek());
+        $this->assertEquals(361, $servicePoint->getDistance());
     }
 }
