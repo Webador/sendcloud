@@ -32,14 +32,14 @@ class ServicePoint
             (array)$data['formatted_opening_times'],
             (bool)$data['open_tomorrow'],
             (bool)$data['open_upcoming_week'],
-            (int)$data['distance']
+            isset($data['distance']) ? (int) $data['distance'] : null
         );
     }
 
     /**
      * @param array<string, string> $extraData Can contain carrier specific data
      * @param array<int, string[]> $formattedOpeningTimes
-     * @param int $distance Distance between the reference point and the service point in meters.
+     * @param ?int $distance Distance in meters OR null if latitude and longitude are not provided in the request
      */
     public function __construct(
         protected int $id,
@@ -62,7 +62,7 @@ class ServicePoint
         protected array $formattedOpeningTimes,
         protected bool $openTomorrow,
         protected bool $openUpcomingWeek,
-        protected int $distance,
+        protected ?int $distance,
     ) {
     }
 
@@ -175,9 +175,9 @@ class ServicePoint
     }
 
     /**
-     * Distance between the reference point and the service point in meters.
+     * @return ?int Distance in meters OR null if latitude and longitude are not provided in the request
      */
-    public function getDistance(): int
+    public function getDistance(): ?int
     {
         return $this->distance;
     }

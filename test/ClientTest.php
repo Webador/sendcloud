@@ -485,16 +485,33 @@ class ClientTest extends TestCase
             200,
             [],
             '[
-                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381},
-                {"id":2,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381}
+                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true},
+                {"id":2,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true}
             ]'
         ));
 
-        $servicePoints = $this->client->searchServicePoints('NL');
+        $servicePoints = $this->client->searchServicePoints(country: 'NL');
 
         $this->assertCount(2, $servicePoints);
         $this->assertEquals(1, $servicePoints[0]->getID());
         $this->assertEquals(2, $servicePoints[1]->getID());
+    }
+
+    public function testSearchServicePointWithDistance(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '[
+                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381}
+            ]'
+        ));
+
+        $servicePoints = $this->client->searchServicePoints(country: 'NL', latitude: 0, longitude: 0);
+
+        $this->assertCount(1, $servicePoints);
+        $this->assertEquals(1, $servicePoints[0]->getID());
+        $this->assertNotNull($servicePoints[0]->getDistance());
     }
 
     public function testGetServicePoint(): void
