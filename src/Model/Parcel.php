@@ -86,6 +86,43 @@ class Parcel
         self::CUSTOMS_SHIPMENT_TYPE_RETURNED_GOODS,
     ];
 
+    public const DOCUMENT_TYPE_AIR_WAYBILL = 'air-waybill';
+    public const DOCUMENT_TYPE_CN23 = 'cn23';
+    public const DOCUMENT_TYPE_CN23_DEFAULT = 'cn23-default';
+    public const DOCUMENT_TYPE_COMMERCIAL_INVOICE = 'commercial-invoice';
+    public const DOCUMENT_TYPE_CP71 = 'cp71';
+    public const DOCUMENT_TYPE_LABEL = 'label';
+    public const DOCUMENT_TYPE_QR = 'qr';
+    public const DOCUMENT_TYPES = [
+        self::DOCUMENT_TYPE_AIR_WAYBILL,
+        self::DOCUMENT_TYPE_CN23,
+        self::DOCUMENT_TYPE_CN23_DEFAULT,
+        self::DOCUMENT_TYPE_COMMERCIAL_INVOICE,
+        self::DOCUMENT_TYPE_CP71,
+        self::DOCUMENT_TYPE_LABEL,
+        self::DOCUMENT_TYPE_QR,
+    ];
+
+    public const CONTENT_TYPE_PDF = 'application/pdf';
+    public const CONTENT_TYPE_ZPL = 'application/zpl';
+    public const CONTENT_TYPE_PNG = 'image/png';
+    public const CONTENT_TYPES = [
+        self::CONTENT_TYPE_PDF,
+        self::CONTENT_TYPE_ZPL,
+        self::CONTENT_TYPE_PNG,
+    ];
+
+    public const DPI_72 = 72;
+    public const DPI_150 = 150;
+    public const DPI_203 = 203;
+    public const DPI_300 = 300;
+    public const DPI_600 = 600;
+    public const DPI_VALUES = [
+        self::CONTENT_TYPE_PDF => [self::DPI_72],
+        self::CONTENT_TYPE_ZPL => [self::DPI_203, self::DPI_300, self::DPI_600],
+        self::CONTENT_TYPE_PNG => [self::DPI_150, self::DPI_300],
+    ];
+
     /**
      * Constants for the 'errors' query parameter for parcel creation
      * @see https://api.sendcloud.dev/docs/sendcloud-public-api/parcels-and-error-handling#errorsverbose

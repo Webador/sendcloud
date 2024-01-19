@@ -5,6 +5,7 @@ namespace JouwWeb\Sendcloud;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Utils;
 use JouwWeb\Sendcloud\Exception\SendcloudClientException;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
@@ -452,6 +453,46 @@ class Client
             return (string)$this->guzzleClient->get($labelUrl)->getBody();
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve label PDF data.');
+        }
+    }
+
+
+    /**
+     * Fetches a single parcel document based on requested document type, content type, and dpi.
+     *
+     * If the parcel hasn't had its labels created through {@see self::createLabel()} it will result in an exception.
+     *
+     * @param string $documentType One of `Parcel::DOCUMENT_TYPES`
+     * @param string $contentType One of `Parcel::CONTENT_TYPES`
+     * @param int $dpi One of `Parcel::DPI_VALUES` limited by the selected `$contentType`
+     * @return string The contents of the requested document
+     * @throws SendcloudClientException
+     */
+    public function getParcelDocument(Parcel|int $parcelId, string $documentType, string $contentType = Parcel::CONTENT_TYPE_PDF, int $dpi = Parcel::DPI_72): string
+    {
+        if (!in_array($documentType, Parcel::DOCUMENT_TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf('Document type "%s" is not accepted. Valid types: %s.', $documentType, implode(', ', Parcel::DOCUMENT_TYPES)));
+        }
+
+        if (!in_array($contentType, Parcel::CONTENT_TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf('Content type "%s" is not accepted. Valid types: %s.', $contentType, implode(', ', Parcel::CONTENT_TYPES)));
+        }
+
+        if (!in_array($dpi, Parcel::DPI_VALUES[$contentType] ?? [], true)) {
+            throw new \InvalidArgumentException(sprintf('DPI "%d" is not accepted for "%s". Valid values: %s.', $dpi, $contentType, implode(', ', Parcel::DPI_VALUES[$contentType])));
+        }
+
+        if ($parcelId instanceof Parcel) {
+            $parcelId = $parcelId->getId();
+        }
+
+        try {
+            return (string)$this->guzzleClient->get(sprintf('parcels/%s/documents/%s', $parcelId, $documentType), [
+                RequestOptions::QUERY => ['dpi' => $dpi],
+                RequestOptions::HEADERS => ['Accept' => $contentType],
+            ])->getBody();
+        } catch (TransferException $exception) {
+            throw $this->parseGuzzleException($exception, sprintf('Could not retrieve parcel document "%s" for parcel id "%d".', $documentType, $parcelId));
         }
     }
 
