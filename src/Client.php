@@ -26,7 +26,7 @@ use Psr\Http\Message\RequestInterface;
 class Client
 {
     protected const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
-    protected const SERVICE_POINTS_BASE_URL = 'https://servicepoints.sendcloud.sc/api/v2/';
+    public const SERVICE_POINTS_BASE_URL = 'https://servicepoints.sendcloud.sc/api/v2/';
 
     protected \GuzzleHttp\Client $guzzleClient;
 
