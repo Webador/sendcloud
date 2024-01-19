@@ -566,7 +566,7 @@ class Client
         try {
             // Construct query array
             $query = [];
-            $query['country_id'] = $country;
+            $query['country'] = $country;
 
             if (isset($address)) {
                 $query['address'] = $address;
