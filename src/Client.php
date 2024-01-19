@@ -26,6 +26,7 @@ use Psr\Http\Message\RequestInterface;
 class Client
 {
     protected const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
+    protected const SERVICE_POINTS_BASE_URL = 'https://servicepoints.sendcloud.sc/api/v2/';
 
     protected \GuzzleHttp\Client $guzzleClient;
 
@@ -614,7 +615,7 @@ class Client
             }
 
             // Send request
-            $response = $this->guzzleClient->get('service-point', [
+            $response = $this->guzzleClient->get('service-points', [
                 'query' => $query,
             ]);
 
@@ -644,7 +645,7 @@ class Client
         $servicePointId = $servicePoint instanceof ServicePoint ? $servicePoint->getId() : $servicePoint;
 
         try {
-            $response = $this->guzzleClient->get('service-point/' . $servicePointId);
+            $response = $this->guzzleClient->get('service-points/' . $servicePointId);
             return ServicePoint::fromData(json_decode((string)$response->getBody(), true));
         } catch (TransferException $exception) {
             throw $this->parseGuzzleException($exception, 'Could not retrieve service point.');
