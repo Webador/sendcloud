@@ -76,25 +76,33 @@ if ($webhookEvent->getType() === WebhookEvent::TYPE_PARCEL_STATUS_CHANGED) {
 ### Retieve a list of service points
 
 ```php
-use JouwWeb\Sendcloud\Client;
+use JouwWeb\Sendcloud\ServicePointsClient;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 
-// Sendcloud uses another api url for service points
-// if you use the default one (i.e https://panel.sendcloud.sc/api/v2/), the API will return a 404 error
-$client = new Client('your_public_key', 'your_secret_key', null, Client::SERVICE_POINTS_BASE_URL);
+$client = new ServicePointsClient('your_public_key', 'your_secret_key');
 
 try {
-    // Search for service points in Netherlands
-    $service_points = $client->searchServicePoints('NL');
+    // Search for service points in the Netherlands.
+    $servicePoints = $client->searchServicePoints('NL');
 
-    // If we want sendcloud to calculate the distance between us and each service points, we need to give the latitude and longitude
-    $service_points_with_distance = $client->searchServicePoints(country: 'NL', latitude: 51.4350511, longitude: 5.4746339);
+    var_dump($servicePoints[0]->isActive()); // bool(true)
+    var_dump($servicePoints[0]->getName()); // string(7) "Primera"
+    var_dump($servicePoints[0]->getCarrier()); // string(6) "postnl"
+    var_dump($servicePoints[0]->getDistance()); // NULL ↓
 
-    // $service_points[0]->getDistance() == null
-    // $service_points_with_distance[1]->getDistance() != null
+    // If we want Sendcloud to calculate the distance between us and each service point, we need to supply latitude and
+    // longitude.
+    $servicePointsWithDistance = $client->searchServicePoints(
+        country: 'NL',
+        latitude: 51.4350511,
+        longitude: 5.4746339
+    );
 
-    // Search for a specific service point using his sendcloud ID
-    $service_point = $client->getServicePoint(1);
+    var_dump($servicePointsWithDistance[0]->getName()); // string(14) "Pakketautomaat"
+    var_dump($servicePointsWithDistance[0]->getDistance()); // int(553)
+
+    // Obtain a specific service point by ID.
+    $servicePoint = $client->getServicePoint(1);
 } catch (SendcloudRequestException $exception) {
     echo $exception->getMessage();
 }

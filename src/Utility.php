@@ -2,6 +2,10 @@
 
 namespace JouwWeb\Sendcloud;
 
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
+use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Exception\SendcloudWebhookException;
 use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
@@ -79,5 +83,42 @@ class Utility
         };
 
         return ($labelUrl ? (string)$labelUrl : null);
+    }
+
+    public static function parseGuzzleException(
+        TransferException $exception,
+        string $defaultMessage
+    ): SendcloudRequestException {
+        $message = $defaultMessage;
+        $code = SendcloudRequestException::CODE_UNKNOWN;
+
+        $responseCode = null;
+        $responseMessage = null;
+        if ($exception instanceof RequestException && $exception->hasResponse()) {
+            $responseData = json_decode((string)$exception->getResponse()->getBody(), true);
+            $responseCode = $responseData['error']['code'] ?? null;
+            $responseMessage = $responseData['error']['message'] ?? null;
+        }
+
+        if ($exception instanceof ConnectException) {
+            $message = 'Could not contact Sendcloud API.';
+            $code = SendcloudRequestException::CODE_CONNECTION_FAILED;
+        }
+
+        // Precondition failed, parse response message to determine code of exception
+        if ($exception->getCode() === 401) {
+            $message = 'Invalid public/secret key combination.';
+            $code = SendcloudRequestException::CODE_UNAUTHORIZED;
+        } elseif ($exception->getCode() === 412) {
+            $message = 'Sendcloud account is not fully configured yet.';
+
+            if (stripos($responseMessage, 'no address data') !== false) {
+                $code = SendcloudRequestException::CODE_NO_ADDRESS_DATA;
+            } elseif (stripos($responseMessage, 'not allowed to announce') !== false) {
+                $code = SendcloudRequestException::CODE_NOT_ALLOWED_TO_ANNOUNCE;
+            }
+        }
+
+        return new SendcloudRequestException($message, $code, $exception, $responseCode, $responseMessage);
     }
 }

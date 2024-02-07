@@ -12,6 +12,7 @@ use JouwWeb\Sendcloud\Model\Address;
 use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
+use JouwWeb\Sendcloud\ServicePointsClient;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -19,12 +20,15 @@ class ClientTest extends TestCase
 {
     protected Client $client;
 
+    protected ServicePointsClient $servicePointsClient;
+
     /** @var \GuzzleHttp\Client&MockObject */
     protected \GuzzleHttp\Client $guzzleClientMock;
 
     public function setUp(): void
     {
         $this->client = new Client('handsome public key', 'gorgeous secret key', 'aPartnerId');
+        $this->servicePointsClient = new ServicePointsClient('handsome public key', 'gorgeous secret key', 'aPartnerId');
 
         $this->guzzleClientMock = $this->createPartialMock(\GuzzleHttp\Client::class, ['request']);
 
@@ -33,6 +37,10 @@ class ClientTest extends TestCase
         $clientProperty = new \ReflectionProperty(Client::class, 'guzzleClient');
         $clientProperty->setAccessible(true);
         $clientProperty->setValue($this->client, $this->guzzleClientMock);
+
+        $clientProperty = new \ReflectionProperty(ServicePointsClient::class, 'guzzleClient');
+        $clientProperty->setAccessible(true);
+        $clientProperty->setValue($this->servicePointsClient, $this->guzzleClientMock);
     }
 
     public function testGetUser(): void
@@ -479,7 +487,7 @@ class ClientTest extends TestCase
         $this->assertEquals('pdfdata', $pdf);
     }
 
-    public function testSearchServicePoint(): void
+    public function testSearchServicePoints(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
@@ -490,11 +498,11 @@ class ClientTest extends TestCase
             ]'
         ));
 
-        $servicePoints = $this->client->searchServicePoints(country: 'NL');
+        $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL');
 
         $this->assertCount(2, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getID());
-        $this->assertEquals(2, $servicePoints[1]->getID());
+        $this->assertEquals(1, $servicePoints[0]->getId());
+        $this->assertEquals(2, $servicePoints[1]->getId());
     }
 
     public function testSearchServicePointWithDistance(): void
@@ -507,10 +515,10 @@ class ClientTest extends TestCase
             ]'
         ));
 
-        $servicePoints = $this->client->searchServicePoints(country: 'NL', latitude: 0, longitude: 0);
+        $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL', latitude: 0, longitude: 0);
 
         $this->assertCount(1, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getID());
+        $this->assertEquals(1, $servicePoints[0]->getId());
         $this->assertNotNull($servicePoints[0]->getDistance());
     }
 
@@ -553,7 +561,7 @@ class ClientTest extends TestCase
             '6' => [],
         ];
 
-        $servicePoint = $this->client->getServicePoint(26);
+        $servicePoint = $this->servicePointsClient->getServicePoint(26);
 
         $this->assertEquals(26, $servicePoint->getId());
         $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->getCode());
