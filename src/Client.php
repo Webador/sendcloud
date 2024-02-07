@@ -43,8 +43,6 @@ class Client
                 $secretKey,
             ],
             'headers' => [
-                // Note: We use the deprecated function instead of GuzzleHttp\Utils::defaultUserAgent() to maintain
-                // support for Guzzle 6.
                 'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
             ],
         ];
@@ -79,6 +77,7 @@ class Client
      * @param bool $returnMethodsOnly When true, methods for making a return are returned instead.
      * @return ShippingMethod[]
      * @throws SendcloudClientException
+     * @see https://sendcloud.dev/docs/shipping/shipping-methods/
      */
     public function getShippingMethods(
         ?int $servicePointId = null,
@@ -153,6 +152,7 @@ class Client
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel
      * @throws SendcloudRequestException
+     * @see https://sendcloud.dev/docs/shipping/create-a-parcel/
      */
     public function createParcel(
         Address $shippingAddress,
@@ -214,6 +214,7 @@ class Client
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @return Parcel[]
      * @throws SendcloudRequestException
+     * @see https://sendcloud.dev/docs/shipping/multicollo/
      */
     public function createMultiParcel(
         Address $shippingAddress,
@@ -317,7 +318,7 @@ class Client
 
     /**
      * Request a label for an existing parcel.
- * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
+     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
      * @throws SendcloudRequestException
      */
