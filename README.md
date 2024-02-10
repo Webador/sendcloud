@@ -73,5 +73,40 @@ if ($webhookEvent->getType() === WebhookEvent::TYPE_PARCEL_STATUS_CHANGED) {
 }
 ```
 
+### Retieve a list of service points
+
+```php
+use JouwWeb\Sendcloud\ServicePointsClient;
+use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
+
+$client = new ServicePointsClient('your_public_key', 'your_secret_key');
+
+try {
+    // Search for service points in the Netherlands.
+    $servicePoints = $client->searchServicePoints('NL');
+
+    var_dump($servicePoints[0]->isActive()); // bool(true)
+    var_dump($servicePoints[0]->getName()); // string(7) "Primera"
+    var_dump($servicePoints[0]->getCarrier()); // string(6) "postnl"
+    var_dump($servicePoints[0]->getDistance()); // NULL ↓
+
+    // If we want Sendcloud to calculate the distance between us and each service point, we need to supply latitude and
+    // longitude.
+    $servicePointsWithDistance = $client->searchServicePoints(
+        country: 'NL',
+        latitude: 51.4350511,
+        longitude: 5.4746339
+    );
+
+    var_dump($servicePointsWithDistance[0]->getName()); // string(14) "Pakketautomaat"
+    var_dump($servicePointsWithDistance[0]->getDistance()); // int(553)
+
+    // Obtain a specific service point by ID.
+    $servicePoint = $client->getServicePoint(1);
+} catch (SendcloudRequestException $exception) {
+    echo $exception->getMessage();
+}
+```
+
 ## Installation
 `composer require jouwweb/sendcloud`
