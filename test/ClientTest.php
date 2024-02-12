@@ -570,19 +570,19 @@ class ClientTest extends TestCase
 
     public function testGetParcelDocumentErrorsWithAnInvalidContentType(): void
     {
-        $this->expectExceptionMessage(sprintf('Content type "invalid content type" is not accepted. Valid types: %s.', implode(', ', Parcel::CONTENT_TYPES)));
+        $this->expectExceptionMessage(sprintf('Content type "invalid content type" is not accepted. Valid types: %s.', implode(', ', Parcel::DOCUMENT_CONTENT_TYPES)));
         $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, 'invalid content type', 0);
     }
 
     public function contentTypesProvider(): array
     {
-        return array_map(static fn (string $value) => [$value], Parcel::CONTENT_TYPES);
+        return array_map(static fn (string $value) => [$value], Parcel::DOCUMENT_CONTENT_TYPES);
     }
 
     /** @dataProvider contentTypesProvider */
     public function testGetParcelDocumentErrorsWithAnDpiPerContentType(string $contentType): void
     {
-        $this->expectExceptionMessage(sprintf('DPI "0" is not accepted for "%s". Valid values: %s.', $contentType, implode(', ', Parcel::DPI_VALUES[$contentType])));
+        $this->expectExceptionMessage(sprintf('DPI "0" is not accepted for "%s". Valid values: %s.', $contentType, implode(', ', Parcel::DOCUMENT_DPI_VALUES[$contentType])));
         $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, $contentType, 0);
     }
 
@@ -593,7 +593,7 @@ class ClientTest extends TestCase
         $this->expectException(SendcloudRequestException::class);
         $this->expectExceptionMessage(sprintf('Could not retrieve parcel document "%s" for parcel id "1".', Parcel::DOCUMENT_TYPE_LABEL));
 
-        $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::CONTENT_TYPE_ZPL, Parcel::DPI_203);
+        $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::DOCUMENT_CONTENT_TYPE_ZPL, Parcel::DOCUMENT_DPI_203);
     }
 
     public function testGetParcelDocumentReturnsTheRequestedContent(): void
@@ -604,6 +604,6 @@ class ClientTest extends TestCase
             'The ZPL content'
         ));
 
-        $this->assertEquals('The ZPL content', $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::CONTENT_TYPE_ZPL, Parcel::DPI_203));
+        $this->assertEquals('The ZPL content', $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::DOCUMENT_CONTENT_TYPE_ZPL, Parcel::DOCUMENT_DPI_203));
     }
 }

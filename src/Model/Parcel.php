@@ -103,24 +103,24 @@ class Parcel
         self::DOCUMENT_TYPE_QR,
     ];
 
-    public const CONTENT_TYPE_PDF = 'application/pdf';
-    public const CONTENT_TYPE_ZPL = 'application/zpl';
-    public const CONTENT_TYPE_PNG = 'image/png';
-    public const CONTENT_TYPES = [
-        self::CONTENT_TYPE_PDF,
-        self::CONTENT_TYPE_ZPL,
-        self::CONTENT_TYPE_PNG,
+    public const DOCUMENT_CONTENT_TYPE_PDF = 'application/pdf';
+    public const DOCUMENT_CONTENT_TYPE_ZPL = 'application/zpl';
+    public const DOCUMENT_CONTENT_TYPE_PNG = 'image/png';
+    public const DOCUMENT_CONTENT_TYPES = [
+        self::DOCUMENT_CONTENT_TYPE_PDF,
+        self::DOCUMENT_CONTENT_TYPE_ZPL,
+        self::DOCUMENT_CONTENT_TYPE_PNG,
     ];
 
-    public const DPI_72 = 72;
-    public const DPI_150 = 150;
-    public const DPI_203 = 203;
-    public const DPI_300 = 300;
-    public const DPI_600 = 600;
-    public const DPI_VALUES = [
-        self::CONTENT_TYPE_PDF => [self::DPI_72],
-        self::CONTENT_TYPE_ZPL => [self::DPI_203, self::DPI_300, self::DPI_600],
-        self::CONTENT_TYPE_PNG => [self::DPI_150, self::DPI_300],
+    public const DOCUMENT_DPI_72 = 72;
+    public const DOCUMENT_DPI_150 = 150;
+    public const DOCUMENT_DPI_203 = 203;
+    public const DOCUMENT_DPI_300 = 300;
+    public const DOCUMENT_DPI_600 = 600;
+    public const DOCUMENT_DPI_VALUES = [
+        self::DOCUMENT_CONTENT_TYPE_PDF => [self::DOCUMENT_DPI_72],
+        self::DOCUMENT_CONTENT_TYPE_ZPL => [self::DOCUMENT_DPI_203, self::DOCUMENT_DPI_300, self::DOCUMENT_DPI_600],
+        self::DOCUMENT_CONTENT_TYPE_PNG => [self::DOCUMENT_DPI_150, self::DOCUMENT_DPI_300],
     ];
 
     /**

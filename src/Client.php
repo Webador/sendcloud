@@ -463,23 +463,23 @@ class Client
      * If the parcel hasn't had its labels created through {@see self::createLabel()} it will result in an exception.
      *
      * @param string $documentType One of {@see Parcel::DOCUMENT_TYPES}
-     * @param string $contentType One of {@see Parcel::CONTENT_TYPES}
-     * @param int $dpi One of {@see Parcel::DPI_VALUES} limited by the selected `$contentType`
+     * @param string $contentType One of {@see Parcel::DOCUMENT_CONTENT_TYPES}
+     * @param int $dpi One of {@see Parcel::DOCUMENT_DPI_VALUES} limited by the selected `$contentType`
      * @return string The contents of the requested document
      * @throws SendcloudClientException
      */
-    public function getParcelDocument(Parcel|int $parcelId, string $documentType, string $contentType = Parcel::CONTENT_TYPE_PDF, int $dpi = Parcel::DPI_72): string
+    public function getParcelDocument(Parcel|int $parcelId, string $documentType, string $contentType = Parcel::DOCUMENT_CONTENT_TYPE_PDF, int $dpi = Parcel::DOCUMENT_DPI_72): string
     {
         if (!in_array($documentType, Parcel::DOCUMENT_TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Document type "%s" is not accepted. Valid types: %s.', $documentType, implode(', ', Parcel::DOCUMENT_TYPES)));
         }
 
-        if (!in_array($contentType, Parcel::CONTENT_TYPES, true)) {
-            throw new \InvalidArgumentException(sprintf('Content type "%s" is not accepted. Valid types: %s.', $contentType, implode(', ', Parcel::CONTENT_TYPES)));
+        if (!in_array($contentType, Parcel::DOCUMENT_CONTENT_TYPES, true)) {
+            throw new \InvalidArgumentException(sprintf('Content type "%s" is not accepted. Valid types: %s.', $contentType, implode(', ', Parcel::DOCUMENT_CONTENT_TYPES)));
         }
 
-        if (!in_array($dpi, Parcel::DPI_VALUES[$contentType] ?? [], true)) {
-            throw new \InvalidArgumentException(sprintf('DPI "%d" is not accepted for "%s". Valid values: %s.', $dpi, $contentType, implode(', ', Parcel::DPI_VALUES[$contentType])));
+        if (!in_array($dpi, Parcel::DOCUMENT_DPI_VALUES[$contentType] ?? [], true)) {
+            throw new \InvalidArgumentException(sprintf('DPI "%d" is not accepted for "%s". Valid values: %s.', $dpi, $contentType, implode(', ', Parcel::DOCUMENT_DPI_VALUES[$contentType])));
         }
 
         if ($parcelId instanceof Parcel) {
