@@ -462,9 +462,9 @@ class Client
      *
      * If the parcel hasn't had its labels created through {@see self::createLabel()} it will result in an exception.
      *
-     * @param string $documentType One of `Parcel::DOCUMENT_TYPES`
-     * @param string $contentType One of `Parcel::CONTENT_TYPES`
-     * @param int $dpi One of `Parcel::DPI_VALUES` limited by the selected `$contentType`
+     * @param string $documentType One of {@see Parcel::DOCUMENT_TYPES}
+     * @param string $contentType One of {@see Parcel::CONTENT_TYPES}
+     * @param int $dpi One of {@see Parcel::DPI_VALUES} limited by the selected `$contentType`
      * @return string The contents of the requested document
      * @throws SendcloudClientException
      */
