@@ -4,6 +4,7 @@ namespace Test\JouwWeb\Sendcloud;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\TransferException;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use JouwWeb\Sendcloud\Client;
@@ -584,5 +585,50 @@ class ClientTest extends TestCase
         $this->assertTrue($servicePoint->isOpenTomorrow());
         $this->assertTrue($servicePoint->isOpenUpcomingWeek());
         $this->assertEquals(361, $servicePoint->getDistance());
+    }
+
+    public function testGetParcelDocumentErrorsWithAnInvalidDocumentType(): void
+    {
+        $this->expectExceptionMessage(sprintf('Document type "invalid document type" is not accepted. Valid types: %s.', implode(', ', Parcel::DOCUMENT_TYPES)));
+        $this->client->getParcelDocument(1, 'invalid document type', 'invalid content type', 0);
+    }
+
+    public function testGetParcelDocumentErrorsWithAnInvalidContentType(): void
+    {
+        $this->expectExceptionMessage(sprintf('Content type "invalid content type" is not accepted. Valid types: %s.', implode(', ', Parcel::DOCUMENT_CONTENT_TYPES)));
+        $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, 'invalid content type', 0);
+    }
+
+    public function contentTypesProvider(): array
+    {
+        return array_map(static fn (string $value) => [$value], Parcel::DOCUMENT_CONTENT_TYPES);
+    }
+
+    /** @dataProvider contentTypesProvider */
+    public function testGetParcelDocumentErrorsWithAnDpiPerContentType(string $contentType): void
+    {
+        $this->expectExceptionMessage(sprintf('DPI "0" is not accepted for "%s". Valid values: %s.', $contentType, implode(', ', Parcel::DOCUMENT_DPI_VALUES[$contentType])));
+        $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, $contentType, 0);
+    }
+
+    public function testGetParcelDocumentRethrowsTheCorrectException(): void
+    {
+        $this->guzzleClientMock->method('request')->willThrowException(new TransferException('Whoops'));
+
+        $this->expectException(SendcloudRequestException::class);
+        $this->expectExceptionMessage(sprintf('Could not retrieve parcel document "%s" for parcel id "1".', Parcel::DOCUMENT_TYPE_LABEL));
+
+        $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::DOCUMENT_CONTENT_TYPE_ZPL, Parcel::DOCUMENT_DPI_203);
+    }
+
+    public function testGetParcelDocumentReturnsTheRequestedContent(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            'The ZPL content'
+        ));
+
+        $this->assertEquals('The ZPL content', $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::DOCUMENT_CONTENT_TYPE_ZPL, Parcel::DOCUMENT_DPI_203));
     }
 }
