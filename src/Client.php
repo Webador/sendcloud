@@ -165,20 +165,16 @@ class Client
         ?ShippingMethod $shippingMethod = null,
         ?string $errors = null
     ): Parcel {
-        $parcelData = $this->getParcelData(
-            null,
-            $shippingAddress,
-            $servicePointId,
-            $orderNumber,
-            $weight,
-            false,
-            $shippingMethod,
-            null,
-            $customsInvoiceNumber,
-            $customsShipmentType,
-            $items,
-            $postNumber,
-            false
+        $parcelData = $this->createParcelData(
+            shippingAddress: $shippingAddress,
+            servicePointId: $servicePointId,
+            orderNumber: $orderNumber,
+            weight: $weight,
+            shippingMethod: $shippingMethod,
+            customsInvoiceNumber: $customsInvoiceNumber,
+            customsShipmentType: $customsShipmentType,
+            items: $items,
+            postNumber: $postNumber,
         );
 
         try {
@@ -229,20 +225,17 @@ class Client
         ?string $errors = null,
         int $quantity = 1
     ): array {
-        $parcelData = $this->getParcelData(
-            null,
-            $shippingAddress,
-            $servicePointId,
-            $orderNumber,
-            $weight,
-            true,
-            $shippingMethod,
-            null,
-            $customsInvoiceNumber,
-            $customsShipmentType,
-            $items,
-            $postNumber,
-            false
+        $parcelData = $this->createParcelData(
+            shippingAddress: $shippingAddress,
+            servicePointId: $servicePointId,
+            orderNumber: $orderNumber,
+            weight: $weight,
+            requestLabel: true,
+            shippingMethod: $shippingMethod,
+            customsInvoiceNumber: $customsInvoiceNumber,
+            customsShipmentType: $customsShipmentType,
+            items: $items,
+            postNumber: $postNumber,
         );
         $parcelData['quantity'] = $quantity;
 
@@ -289,20 +282,9 @@ class Client
      */
     public function updateParcel(Parcel|int $parcel, Address $shippingAddress): Parcel
     {
-        $parcelData = $this->getParcelData(
-            $this->parseParcelArgument($parcel),
-            $shippingAddress,
-            null,
-            null,
-            null,
-            false,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            false
+        $parcelData = $this->createParcelData(
+            is_int($parcel) ? $parcel : $parcel->getId(),
+            shippingAddress: $shippingAddress,
         );
 
         try {
@@ -328,20 +310,12 @@ class Client
      */
     public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress, bool $applyShippingRules = false): Parcel
     {
-        $parcelData = $this->getParcelData(
-            $this->parseParcelArgument($parcel),
-            null,
-            null,
-            null,
-            null,
-            true,
-            $shippingMethod,
-            $senderAddress,
-            null,
-            null,
-            null,
-            null,
-            $applyShippingRules
+        $parcelData = $this->createParcelData(
+            parcelId: is_int($parcel) ? $parcel : $parcel->getId(),
+            requestLabel: true,
+            shippingMethod: $shippingMethod,
+            senderAddress: $senderAddress,
+            applyShippingRules: $applyShippingRules
         );
 
         try {
@@ -365,7 +339,8 @@ class Client
     public function cancelParcel(Parcel|int $parcel): bool
     {
         try {
-            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $this->parseParcelArgument($parcel)));
+            $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
+            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcelId));
             return true;
         } catch (TransferException $exception) {
             $statusCode = ($exception instanceof RequestException && $exception->hasResponse()
@@ -497,7 +472,7 @@ class Client
                 RequestOptions::HEADERS => ['Accept' => $contentType],
             ])->getBody();
         } catch (TransferException $exception) {
-            throw $this->parseGuzzleException($exception, sprintf('Could not retrieve parcel document "%s" for parcel id "%d".', $documentType, $parcelId));
+            throw Utility::parseGuzzleException($exception, sprintf('Could not retrieve parcel document "%s" for parcel id "%d".', $documentType, $parcelId));
         }
     }
 
@@ -529,7 +504,8 @@ class Client
     public function getParcel(Parcel|int $parcel): Parcel
     {
         try {
-            $response = $this->guzzleClient->get('parcels/' . $this->parseParcelArgument($parcel));
+            $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
+            $response = $this->guzzleClient->get(sprintf('parcels/%s', $parcelId));
             return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
             throw Utility::parseGuzzleException($exception, 'Could not retrieve parcel.');
@@ -553,9 +529,10 @@ class Client
     public function getReturnPortalUrl(Parcel|int $parcel): ?string
     {
         try {
+            $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
             $response = $this->guzzleClient->get(sprintf(
                 'parcels/%s/return_portal_url',
-                $this->parseParcelArgument($parcel)
+                $parcelId
             ));
 
             return (string)json_decode($response->getBody(), true)['url'];
@@ -576,19 +553,19 @@ class Client
      * use undocumented behavior that will disable branding personalizations.
      * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      */
-    protected function getParcelData(
-        ?int $parcelId,
-        ?Address $shippingAddress,
-        ?string $servicePointId,
-        ?string $orderNumber,
-        ?int $weight,
-        bool $requestLabel,
-        ShippingMethod|int|null $shippingMethod,
-        SenderAddress|Address|int|null $senderAddress,
-        ?string $customsInvoiceNumber,
-        ?int $customsShipmentType,
-        ?array $items,
-        ?string $postNumber,
+    protected function createParcelData(
+        ?int $parcelId = null,
+        ?Address $shippingAddress = null,
+        ?string $servicePointId = null,
+        ?string $orderNumber = null,
+        ?int $weight = null,
+        bool $requestLabel = false,
+        ShippingMethod|int|null $shippingMethod = null,
+        SenderAddress|Address|int|null $senderAddress = null,
+        ?string $customsInvoiceNumber = null,
+        ?int $customsShipmentType = null,
+        ?array $items  = null,
+        ?string $postNumber = null,
         bool $applyShippingRules = false
     ): array {
         $parcelData = [];
@@ -732,19 +709,5 @@ class Client
         }
 
         return $parcelData;
-    }
-
-    // TODO: Remove parseParcelArgument() now we use native unions.
-    protected function parseParcelArgument(Parcel|int $parcel): int
-    {
-        if (is_int($parcel)) {
-            return $parcel;
-        }
-
-        if ($parcel instanceof Parcel) {
-            return $parcel->getId();
-        }
-
-        throw new \InvalidArgumentException('Parcel argument must be a parcel or parcel ID.');
     }
 }

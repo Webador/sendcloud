@@ -36,11 +36,9 @@ class ClientTest extends TestCase
         // Inject the mock HTTP client through reflection. The alternative is to pass it into the ctor but that would
         // require us to use PSR-7 requests instead of Guzzle's more convenient usage.
         $clientProperty = new \ReflectionProperty(Client::class, 'guzzleClient');
-        $clientProperty->setAccessible(true);
         $clientProperty->setValue($this->client, $this->guzzleClientMock);
 
         $clientProperty = new \ReflectionProperty(ServicePointsClient::class, 'guzzleClient');
-        $clientProperty->setAccessible(true);
         $clientProperty->setValue($this->servicePointsClient, $this->guzzleClientMock);
     }
 
@@ -599,7 +597,7 @@ class ClientTest extends TestCase
         $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, 'invalid content type', 0);
     }
 
-    public function contentTypesProvider(): array
+    public static function contentTypesProvider(): array
     {
         return array_map(static fn (string $value) => [$value], Parcel::DOCUMENT_CONTENT_TYPES);
     }
