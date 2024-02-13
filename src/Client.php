@@ -109,7 +109,7 @@ class Client
             }
 
             $response = $this->guzzleClient->get('shipping_methods', [
-                'query' => $queryData,
+                RequestOptions::QUERY => $queryData,
             ]);
             $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
@@ -178,17 +178,17 @@ class Client
         );
 
         try {
-            $data = [
-                'json' => [
+            $requestOptions = [
+                RequestOptions::JSON => [
                     'parcel' => $parcelData,
                 ],
             ];
 
-            if(isset($errors)){
-                $data['query'] = ['errors' => $errors];
+            if (isset($errors)){
+                $requestOptions[RequestOptions::QUERY] = ['errors' => $errors];
             }
 
-            $response = $this->guzzleClient->post('parcels', $data);
+            $response = $this->guzzleClient->post('parcels', $requestOptions);
 
             return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
@@ -242,17 +242,17 @@ class Client
         try {
             $parcels = [];
 
-            $data = [
-                'json' => [
+            $requestOptions = [
+                RequestOptions::JSON => [
                     'parcels' => [$parcelData],
                 ],
             ];
 
-            if(isset($errors)){
-                $data['query'] = ['errors' => $errors];
+            if (isset($errors)){
+                $requestOptions[RequestOptions::QUERY] = ['errors' => $errors];
             }
 
-            $response = $this->guzzleClient->post('parcels', $data);
+            $response = $this->guzzleClient->post('parcels', $requestOptions);
             $json = json_decode((string)$response->getBody(), true);
 
             // Retrieve successfully created parcels
@@ -262,7 +262,7 @@ class Client
 
             // Retrieve failed parcels
             /*
-            if(isset($json['failed_parcels'])) {
+            if (isset($json['failed_parcels'])) {
                 foreach ($json['failed_parcels'] as $parcel) {
                     $parcels[] = Parcel::fromData($parcel);
                 }
@@ -289,7 +289,7 @@ class Client
 
         try {
             $response = $this->guzzleClient->put('parcels', [
-                'json' => [
+                RequestOptions::JSON => [
                     'parcel' => $parcelData,
                 ],
             ]);
@@ -320,7 +320,7 @@ class Client
 
         try {
             $response = $this->guzzleClient->put('parcels', [
-                'json' => [
+                RequestOptions::JSON => [
                     'parcel' => $parcelData,
                 ],
             ]);
@@ -413,7 +413,7 @@ class Client
 
         try {
             $response = $this->guzzleClient->post('labels', [
-                'json' => [
+                RequestOptions::JSON => [
                     'label' => [
                         'parcels' => $parcelIds,
                     ]

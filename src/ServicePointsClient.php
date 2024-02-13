@@ -3,6 +3,7 @@
 namespace JouwWeb\Sendcloud;
 
 use GuzzleHttp\Exception\TransferException;
+use GuzzleHttp\RequestOptions;
 use GuzzleHttp\Utils;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Model\ServicePoint;
@@ -134,7 +135,7 @@ class ServicePointsClient
 
             // Send request
             $response = $this->guzzleClient->get('service-points', [
-                'query' => $query,
+                RequestOptions::QUERY => $query,
             ]);
 
             // Decode and create ServicePoint objects
