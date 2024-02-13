@@ -448,7 +448,7 @@ class Client
      * @return string The contents of the requested document
      * @throws SendcloudClientException
      */
-    public function getParcelDocument(Parcel|int $parcelId, string $documentType, string $contentType = Parcel::DOCUMENT_CONTENT_TYPE_PDF, int $dpi = Parcel::DOCUMENT_DPI_72): string
+    public function getParcelDocument(Parcel|int $parcel, string $documentType, string $contentType = Parcel::DOCUMENT_CONTENT_TYPE_PDF, int $dpi = Parcel::DOCUMENT_DPI_72): string
     {
         if (!in_array($documentType, Parcel::DOCUMENT_TYPES, true)) {
             throw new \InvalidArgumentException(sprintf('Document type "%s" is not accepted. Valid types: %s.', $documentType, implode(', ', Parcel::DOCUMENT_TYPES)));
@@ -462,11 +462,8 @@ class Client
             throw new \InvalidArgumentException(sprintf('DPI "%d" is not accepted for "%s". Valid values: %s.', $dpi, $contentType, implode(', ', Parcel::DOCUMENT_DPI_VALUES[$contentType])));
         }
 
-        if ($parcelId instanceof Parcel) {
-            $parcelId = $parcelId->getId();
-        }
-
         try {
+            $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
             return (string)$this->guzzleClient->get(sprintf('parcels/%s/documents/%s', $parcelId, $documentType), [
                 RequestOptions::QUERY => ['dpi' => $dpi],
                 RequestOptions::HEADERS => ['Accept' => $contentType],
