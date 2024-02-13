@@ -176,7 +176,8 @@ class Client
             $customsInvoiceNumber,
             $customsShipmentType,
             $items,
-            $postNumber
+            $postNumber,
+            false
         );
 
         try {
@@ -239,7 +240,8 @@ class Client
             $customsInvoiceNumber,
             $customsShipmentType,
             $items,
-            $postNumber
+            $postNumber,
+            false
         );
         $parcelData['quantity'] = $quantity;
 
@@ -298,7 +300,8 @@ class Client
             null,
             null,
             null,
-            null
+            null,
+            false
         );
 
         try {
@@ -318,9 +321,11 @@ class Client
      * Request a label for an existing parcel.
      * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
      * use undocumented behavior that will disable branding personalizations.
+     * @param bool $applyShippingRules shipping rules can override the given shippingMethod and can be configured in the
+     * sendcloud control panel
      * @throws SendcloudRequestException
      */
-    public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress): Parcel
+    public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress, bool $applyShippingRules = false): Parcel
     {
         $parcelData = $this->getParcelData(
             $this->parseParcelArgument($parcel),
@@ -334,7 +339,8 @@ class Client
             null,
             null,
             null,
-            null
+            null,
+            $applyShippingRules
         );
 
         try {
@@ -541,7 +547,8 @@ class Client
         ?string $customsInvoiceNumber,
         ?int $customsShipmentType,
         ?array $items,
-        ?string $postNumber
+        ?string $postNumber,
+        bool $applyShippingRules = false
     ): array {
         $parcelData = [];
 
@@ -629,6 +636,10 @@ class Client
             }
 
             $parcelData['parcel_items'] = $itemsData;
+        }
+
+        if ($applyShippingRules) {
+            $parcelData['apply_shipping_rules'] = true;
         }
 
         // Additional fields are only added when requesting a label
