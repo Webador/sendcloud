@@ -165,6 +165,8 @@ class Client
         ?ShippingMethod $shippingMethod = null,
         ?string $errors = null,
         ?string $shippingMethodCheckoutName = null,
+        ?string $totalOrderValue = null,
+        ?string $totalOrderValueCurrency = null,
     ): Parcel {
         $parcelData = $this->createParcelData(
             shippingAddress: $shippingAddress,
@@ -177,6 +179,8 @@ class Client
             items: $items,
             postNumber: $postNumber,
             shippingMethodCheckoutName: $shippingMethodCheckoutName,
+            totalOrderValue: $totalOrderValue,
+            totalOrderValueCurrency: $totalOrderValueCurrency,
         );
 
         try {
@@ -567,6 +571,8 @@ class Client
         ?string $postNumber = null,
         bool $applyShippingRules = false,
         ?string $shippingMethodCheckoutName = null,
+        ?string $totalOrderValue = null,
+        ?string $totalOrderValueCurrency = null,
     ): array {
         $parcelData = [];
 
@@ -662,6 +668,11 @@ class Client
 
         if ($shippingMethodCheckoutName) {
             $parcelData['shipping_method_checkout_name'] = $shippingMethodCheckoutName;
+        }
+
+        if ($totalOrderValue && $totalOrderValueCurrency) {
+            $parcelData['total_order_value'] = $totalOrderValue;
+            $parcelData['total_order_value_currency'] = $totalOrderValueCurrency;
         }
 
         // Additional fields are only added when requesting a label
