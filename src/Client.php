@@ -163,7 +163,8 @@ class Client
         ?array $items = null,
         ?string $postNumber = null,
         ?ShippingMethod $shippingMethod = null,
-        ?string $errors = null
+        ?string $errors = null,
+        ?string $shippingMethodCheckoutName = null,
     ): Parcel {
         $parcelData = $this->createParcelData(
             shippingAddress: $shippingAddress,
@@ -175,6 +176,7 @@ class Client
             customsShipmentType: $customsShipmentType,
             items: $items,
             postNumber: $postNumber,
+            shippingMethodCheckoutName: $shippingMethodCheckoutName,
         );
 
         try {
@@ -563,7 +565,8 @@ class Client
         ?int $customsShipmentType = null,
         ?array $items  = null,
         ?string $postNumber = null,
-        bool $applyShippingRules = false
+        bool $applyShippingRules = false,
+        ?string $shippingMethodCheckoutName = null,
     ): array {
         $parcelData = [];
 
@@ -655,6 +658,10 @@ class Client
 
         if ($applyShippingRules) {
             $parcelData['apply_shipping_rules'] = true;
+        }
+
+        if ($shippingMethodCheckoutName) {
+            $parcelData['shipping_method_checkout_name'] = $shippingMethodCheckoutName;
         }
 
         // Additional fields are only added when requesting a label
