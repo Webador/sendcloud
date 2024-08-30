@@ -675,6 +675,17 @@ class Client
             $parcelData['total_order_value_currency'] = $totalOrderValueCurrency;
         }
 
+        // Add shipping method regardless of requestLabel flag
+        if ($shippingMethod instanceof ShippingMethod) {
+            $parcelData['shipment'] = [
+                'id' => $shippingMethod->getId(),
+            ];
+        } elseif (is_int($shippingMethod)) {
+            $parcelData['shipment'] = [
+                'id' => $shippingMethod,
+            ];
+        }
+
         // Additional fields are only added when requesting a label
         if ($requestLabel) {
             $parcelData['request_label'] = true;
@@ -705,21 +716,6 @@ class Client
                 ]);
             } elseif (is_int($senderAddress)) {
                 $parcelData['sender_address'] = $senderAddress;
-            }
-
-            // Shipping method
-            if ($shippingMethod instanceof ShippingMethod) {
-                $parcelData['shipment'] = [
-                    'id' => $shippingMethod->getId(),
-                ];
-            } elseif (is_int($shippingMethod)) {
-                $parcelData['shipment'] = [
-                    'id' => $shippingMethod,
-                ];
-            } else {
-                throw new \InvalidArgumentException(
-                    'Shipping method must be passed when requesting a label.'
-                );
             }
         }
 
