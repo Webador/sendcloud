@@ -719,6 +719,12 @@ class Client
             }
         }
 
+        if ($requestLabel && !isset($parcelData['shipment'])) {
+            throw new \InvalidArgumentException(
+                'Shipping method must be passed when requesting a label.'
+            );
+        }
+
         return $parcelData;
     }
 }
