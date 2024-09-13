@@ -308,8 +308,8 @@ class Client
 
     /**
      * Request a label for an existing parcel.
-     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. An Address will
-     * use undocumented behavior that will disable branding personalizations.
+     * @param SenderAddress|Address|int|null $senderAddress Passing null will pick Sendcloud's default. Passing an
+     * Address will disable branding personalizations.
      * @param bool $applyShippingRules shipping rules can override the given shippingMethod and can be configured in the
      * sendcloud control panel
      * @throws SendcloudRequestException
@@ -675,52 +675,51 @@ class Client
             $parcelData['total_order_value_currency'] = $totalOrderValueCurrency;
         }
 
-        // Additional fields are only added when requesting a label
-        if ($requestLabel) {
-            $parcelData['request_label'] = true;
+        if ($shippingMethod instanceof ShippingMethod) {
+            $parcelData['shipment'] = [
+                'id' => $shippingMethod->getId(),
+            ];
+        } elseif (is_int($shippingMethod)) {
+            $parcelData['shipment'] = [
+                'id' => $shippingMethod,
+            ];
+        }
 
-            // Sender address
-            if ($senderAddress instanceof SenderAddress) {
-                $parcelData['sender_address'] = $senderAddress->getId();
-            } elseif ($senderAddress instanceof Address) {
-                // API will assert that house number is passed separately. See
-                // https://github.com/Webador/sendcloud/issues/25.
-                if (!$senderAddress->getHouseNumber()) {
-                    throw new \InvalidArgumentException(
-                        'House number must be passed separately on Address instance passed as sender address.'
-                    );
-                }
-
-                $parcelData = array_merge($parcelData, [
-                    'from_name' => $senderAddress->getName(),
-                    'from_company_name' => $senderAddress->getCompanyName() ?? '',
-                    'from_address_1' => $senderAddress->getAddressLine1(),
-                    'from_address_2' => $senderAddress->getAddressLine2() ?? '',
-                    'from_house_number' => $senderAddress->getHouseNumber() ?? '',
-                    'from_city' => $senderAddress->getCity(),
-                    'from_postal_code' => $senderAddress->getPostalCode(),
-                    'from_country' => $senderAddress->getCountryCode(),
-                    'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
-                    'from_email' => $senderAddress->getEmailAddress(),
-                ]);
-            } elseif (is_int($senderAddress)) {
-                $parcelData['sender_address'] = $senderAddress;
+        if ($senderAddress instanceof SenderAddress) {
+            $parcelData['sender_address'] = $senderAddress->getId();
+        } elseif (is_int($senderAddress)) {
+            $parcelData['sender_address'] = $senderAddress;
+        } elseif ($senderAddress instanceof Address) {
+            // API will assert that house number is passed separately. See
+            // https://github.com/Webador/sendcloud/issues/25.
+            if (!$senderAddress->getHouseNumber()) {
+                throw new \InvalidArgumentException(
+                    'House number must be passed separately on Address instance passed as sender address.'
+                );
             }
 
-            // Shipping method
-            if ($shippingMethod instanceof ShippingMethod) {
-                $parcelData['shipment'] = [
-                    'id' => $shippingMethod->getId(),
-                ];
-            } elseif (is_int($shippingMethod)) {
-                $parcelData['shipment'] = [
-                    'id' => $shippingMethod,
-                ];
-            } else {
+            $parcelData = array_merge($parcelData, [
+                'from_name' => $senderAddress->getName(),
+                'from_company_name' => $senderAddress->getCompanyName() ?? '',
+                'from_address_1' => $senderAddress->getAddressLine1(),
+                'from_address_2' => $senderAddress->getAddressLine2() ?? '',
+                'from_house_number' => $senderAddress->getHouseNumber() ?? '',
+                'from_city' => $senderAddress->getCity(),
+                'from_postal_code' => $senderAddress->getPostalCode(),
+                'from_country' => $senderAddress->getCountryCode(),
+                'from_telephone' => $senderAddress->getPhoneNumber() ?? '',
+                'from_email' => $senderAddress->getEmailAddress(),
+            ]);
+        }
+
+        if ($requestLabel) {
+            if (!isset($parcelData['shipment'])) {
                 throw new \InvalidArgumentException(
                     'Shipping method must be passed when requesting a label.'
                 );
             }
+
+            $parcelData['request_label'] = true;
         }
 
         return $parcelData;
