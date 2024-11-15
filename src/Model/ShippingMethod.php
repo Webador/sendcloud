@@ -22,6 +22,34 @@ class ShippingMethod
         );
     }
 
+    public static function fromShippingProductData(array $shippingProductData): array
+    {
+        $allowsServicePoints = in_array(
+            ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
+            $shippingProductData['available_functionalities']['last_mile'] ?? [],
+            true
+        );
+        $carrier = (string)$shippingProductData['carrier'];
+
+        $shippingMethods = [];
+
+        forEach($shippingProductData['methods'] as $shippingMethodData) {
+            $shippingMethods[] = new self(
+                (int)$shippingMethodData['id'],
+                (string)$shippingMethodData['name'],
+                // "min_weight" and "max_weight" values
+                // of shippingMethod from shippingProduct are directly get in grams
+                (int)$shippingMethodData['properties']['min_weight'] ?? null,
+                (int)$shippingMethodData['properties']['max_weight'] ?? null,
+                $carrier,
+                [],
+                $allowsServicePoints,
+            );
+        }
+
+        return $shippingMethods;
+    }
+
     /**
      * @param int $id
      * @param string $name
