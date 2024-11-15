@@ -15,8 +15,10 @@ use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\SenderAddress;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
+use JouwWeb\Sendcloud\Model\ShippingProduct;
 use JouwWeb\Sendcloud\Model\User;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
+use JouwWeb\Sendcloud\Service\ShippingMethodService;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -117,20 +119,110 @@ class Client
                 ShippingMethod::fromData($shippingMethodData)
             ), $shippingMethodsData);
 
-            // Sort by carrier and name
-            usort($shippingMethods, function (ShippingMethod $method1, ShippingMethod $method2) {
-                if ($method1->getCarrier() !== $method2->getCarrier()) {
-                    return strcasecmp($method1->getCarrier(), $method2->getCarrier());
-                }
-
-                return strcasecmp($method1->getName(), $method2->getName());
-            });
+            ShippingMethodService::sortByCarrierAndName($shippingMethods);
 
             return $shippingMethods;
         } catch (TransferException $exception) {
             throw Utility::parseGuzzleException(
                 $exception,
                 'An error occurred while fetching shipping methods from the Sendcloud API.'
+            );
+        }
+    }
+
+    /**
+     * Fetches available Sendcloud shipping methods, grouped thanks to common characteristics that can be used as filter.
+     * A lot of various filters can be used on this Sendcloud route (@see https://sendcloud.dev/docs/shipping/shipping_products/).
+     * Only a part of them are in the parameters below.
+     *
+     * As this function allows to finely filter the shipping methods, it's especially useful if the contract have a huge
+     * quantity of shipping methods.
+     *
+     * Warning, by contrast with getShippingMethods(), here the prices of shipping methods are not given.
+     *
+     * @param string|null $deliveryMode The delivery mode that should be used by the returned shipping methods.
+     * Only one of these values: {@see ShippingProduct::DELIVERY_MODES}.
+     * @param string|null $fromCountry The sender address to ship from. A country ISO 2 code.
+     * @param string|null $toCountry The receiver address to ship to. A country ISO 2 code.
+     * @param string|null $carrier The carrier of shipping methods that should be filtered on, this carrier must be
+     * enabled on the contract to have a result on this filter.
+     * @param int|null $weight When not null, only methods with "min_weight" and "max_weight" that encompass the $weight
+     * will be returned. Only works with $weightUnit parameter.
+     * @param string|null $weightUnit Required if parameter $weight is not null.
+     * Only one of these values: {@see ShippingProduct::WEIGHT_UNITS}.
+     * @param bool|null $withReturn When true, methods returned can be used for making a return shipment.
+     * @return ShippingMethod[]
+     * @throws SendcloudClientException
+     * @see https://sendcloud.dev/docs/shipping/shipping_products/
+     */
+    public function getShippingMethodsWithoutPrice(
+        ?string $deliveryMode = null,
+        ?string $fromCountry = null,
+        ?string $toCountry = null,
+        ?string $carrier = null,
+        ?int $weight = null,
+        ?string $weightUnit = null,
+        ?bool $withReturn = null,
+    ): array {
+        try {
+            $queryData = [];
+
+            if ($deliveryMode !== null) {
+                if (! in_array($deliveryMode, ShippingProduct::DELIVERY_MODES)) {
+                    throw new \InvalidArgumentException(
+                        "Delivery mode \"$deliveryMode\" is not available to get shipping products."
+                    );
+                }
+                $queryData['last_mile'] = $deliveryMode;
+            }
+
+            if ($fromCountry !== null) {
+                $queryData['from_country'] = $fromCountry;
+            }
+
+            if ($toCountry !== null) {
+                $queryData['to_country'] = $toCountry;
+            }
+
+            if ($carrier !== null) {
+                $queryData['carrier'] = $carrier;
+            }
+
+            if ($weight !== null) {
+                if (! $weightUnit || ! in_array($weightUnit, ShippingProduct::WEIGHT_UNITS)) {
+                    throw new \InvalidArgumentException(
+                        'Weight unit ' . ($weightUnit ? "\"$weightUnit\" provided is not available" : 'is needed') . ' to get shipping products.'
+                    );
+                }
+
+                $queryData['weight'] = $weight;
+                $queryData['weight_unit'] = $weightUnit;
+            }
+
+            if ($withReturn === true) {
+                $queryData['returns'] = true;
+            }
+
+            $response = $this->guzzleClient->get('shipping-products', [
+                RequestOptions::QUERY => $queryData,
+            ]);
+            $shippingProductsData = json_decode((string)$response->getBody(), true);
+
+            $shippingMethods = [];
+            foreach ($shippingProductsData as $shippingProductData) {
+                $shippingMethods = array_merge(
+                    $shippingMethods,
+                    ShippingMethod::fromShippingProductData($shippingProductData)
+                );
+            }
+
+            ShippingMethodService::sortByCarrierAndName($shippingMethods);
+
+            return $shippingMethods;
+        } catch (TransferException $exception) {
+            throw Utility::parseGuzzleException(
+                $exception,
+                'An error occurred while fetching shipping products from the Sendcloud API.'
             );
         }
     }
