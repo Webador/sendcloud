@@ -129,4 +129,13 @@ class ShippingMethod
     {
         return $this->getName();
     }
+
+    public static function compareByCarrierAndName(ShippingMethod $method1, ShippingMethod $method2): int
+    {
+        if ($method1->getCarrier() !== $method2->getCarrier()) {
+            return strcasecmp($method1->getCarrier(), $method2->getCarrier());
+        }
+
+        return strcasecmp($method1->getName(), $method2->getName());
+    }
 }

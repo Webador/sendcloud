@@ -29,6 +29,9 @@ class ClientTest extends TestCase
 
     public function setUp(): void
     {
+        # Turn on error reporting
+        error_reporting(E_ALL);
+
         $this->client = new Client('handsome public key', 'gorgeous secret key', 'aPartnerId');
         $this->servicePointsClient = new ServicePointsClient('handsome public key', 'gorgeous secret key', 'aPartnerId');
 
@@ -117,7 +120,7 @@ class ClientTest extends TestCase
         $this->client->getShippingMethods(10, 11, true);
     }
 
-    public function testGetShippingMethodsWithoutPrice(): void
+    public function testGetShippingProducts(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
@@ -126,8 +129,8 @@ class ClientTest extends TestCase
                 ['query' => []],
             ], func_get_args());
 
-            $shippingProduct1 = '{"name": "Shipping product 1", "carrier": "carrier_code_1", "available_functionalities": {"last_mile": ["home_delivery"]},"methods": [{"id": 1, "name": "A- Low weight shipment","properties": { "min_weight": 1, "max_weight": 51}}]}';
-            $shippingProduct2 = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}]}';
+            $shippingProduct1 = '{"name": "Shipping product 1", "carrier": "carrier_code_1", "available_functionalities": {"last_mile": ["home_delivery"], "returns": [false]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 51, "max_weight": 1001}}, {"id": 1, "name": "A- Low weight shipment","properties": { "min_weight": 1, "max_weight": 51}}],"weight_range":{"min_weight": 1,"max_weight": 1001}}';
+            $shippingProduct2 = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"], "returns": [true]},"methods": [{"id": 3, "name": "C- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}],"weight_range":{"min_weight": 1000,"max_weight": 2001}}';
 
             return new Response(
                 200,
@@ -136,27 +139,35 @@ class ClientTest extends TestCase
             );
         });
 
-        $shippingMethods = $this->client->getShippingMethodsWithoutPrice();
+        $shippingProducts = $this->client->getShippingProducts();
 
-        // All shipping methods should be in result, even when they come from different shipping products
-        $this->assertCount(2, $shippingMethods);
+        // All shipping products should be in result
+        $this->assertCount(2, $shippingProducts);
 
-        // Shipping method order should be ascending by their name
-        $this->assertEquals(['A- Low weight shipment', 'B- Heavy weight shipment'], array_map(fn ($method) => $method->getName(), $shippingMethods));
+        // All shipping methods should be in result, inside the different shipping products
+        $this->assertCount(2, $shippingProducts[0]->getMethods());
+        $this->assertCount(1, $shippingProducts[1]->getMethods());
 
-        $this->assertEquals(1, $shippingMethods[0]->getMinimumWeight());
-        $this->assertEquals(51, $shippingMethods[0]->getMaximumWeight());
-        $this->assertEquals('carrier_code_1', $shippingMethods[0]->getCarrier());
+        $this->assertEquals(['Shipping product 1', 'Shipping product 2'], array_map(fn ($product) => $product->getName(), $shippingProducts));
+
+        $this->assertEquals(1, $shippingProducts[0]->getMinimumWeight());
+        $this->assertEquals(1001, $shippingProducts[0]->getMaximumWeight());
+        $this->assertEquals('carrier_code_1', $shippingProducts[0]->getCarrier());
+        $this->assertEquals(false, $shippingProducts[0]->getWithReturn());
+        $this->assertEquals(true, $shippingProducts[1]->getWithReturn());
+
+        // Shipping methods order should be ascending by their name
+        $this->assertEquals(['A- Low weight shipment', 'B- Heavy weight shipment'], array_map(fn ($product) => $product->getName(), $shippingProducts[0]->getMethods()));
+
+        $this->assertFalse($shippingProducts[0]->getAllowServicePoints());
+        $this->assertTrue($shippingProducts[1]->getAllowServicePoints());
 
         // Prices should be empty
-        $this->assertEquals([], $shippingMethods[0]->getPrices());
-        $this->assertNull($shippingMethods[0]->getPriceForCountry('EN'));
-
-        $this->assertFalse($shippingMethods[0]->getAllowsServicePoints());
-        $this->assertTrue($shippingMethods[1]->getAllowsServicePoints());
+        $this->assertEquals([], $shippingProducts[0]->getMethods()[0]->getPrices());
+        $this->assertNull($shippingProducts[0]->getMethods()[0]->getPriceForCountry('EN'));
     }
 
-    public function testGetShippingMethodsWithoutPriceCaseAllOptionalArguments(): void
+    public function testGetShippingProductsCaseAllOptionalArguments(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
@@ -173,7 +184,7 @@ class ClientTest extends TestCase
                 ]],
             ], func_get_args());
 
-            $shippingProduct = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}]}';
+            $shippingProduct = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}],"weight_range":{"min_weight": 1000,"max_weight": 2001}}';
 
             return new Response(
                 200,
@@ -182,7 +193,7 @@ class ClientTest extends TestCase
             );
         });
 
-        $shippingMethods = $this->client->getShippingMethodsWithoutPrice(
+        $shippingMethods = $this->client->getShippingProducts(
             ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
             'NL',
             'EN',
@@ -195,7 +206,7 @@ class ClientTest extends TestCase
         $this->assertCount(1, $shippingMethods);
     }
 
-    public function testGetShippingMethodsWithoutPriceCaseEmptyResponse(): void
+    public function testGetShippingProductsCaseEmptyResponse(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
@@ -211,34 +222,34 @@ class ClientTest extends TestCase
             );
         });
 
-        $shippingMethods = $this->client->getShippingMethodsWithoutPrice();
+        $shippingMethods = $this->client->getShippingProducts();
 
         $this->assertCount(0, $shippingMethods);
     }
 
-    public function testGetShippingMethodsWithoutPriceCaseBadArgumentDeliveryMode(): void
+    public function testGetShippingProductsCaseBadArgumentDeliveryMode(): void
     {
         $this->expectExceptionMessage('Delivery mode "abc" is not available to get shipping products.');
 
-        $this->client->getShippingMethodsWithoutPrice(
+        $this->client->getShippingProducts(
             deliveryMode: 'abc',
         );
     }
 
-    public function testGetShippingMethodsWithoutPriceCaseArgumentWeightUnitMissing(): void
+    public function testGetShippingProductsCaseArgumentWeightUnitMissing(): void
     {
         $this->expectExceptionMessage('Weight unit is needed to get shipping products.');
 
-        $this->client->getShippingMethodsWithoutPrice(
+        $this->client->getShippingProducts(
             weight: 1500,
         );
     }
 
-    public function testGetShippingMethodsWithoutPriceCaseBadArgumentWeightUnit(): void
+    public function testGetShippingProductsCaseBadArgumentWeightUnit(): void
     {
         $this->expectExceptionMessage('Weight unit "ton" provided is not available to get shipping products.');
 
-        $this->client->getShippingMethodsWithoutPrice(
+        $this->client->getShippingProducts(
             weight: 1500,
             weightUnit: 'ton',
         );

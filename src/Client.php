@@ -18,7 +18,6 @@ use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\ShippingProduct;
 use JouwWeb\Sendcloud\Model\User;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
-use JouwWeb\Sendcloud\Service\ShippingMethodService;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -119,7 +118,7 @@ class Client
                 ShippingMethod::fromData($shippingMethodData)
             ), $shippingMethodsData);
 
-            ShippingMethodService::sortByCarrierAndName($shippingMethods);
+            usort($shippingMethods, [ShippingMethod::class, 'compareByCarrierAndName']);
 
             return $shippingMethods;
         } catch (TransferException $exception) {
@@ -131,7 +130,7 @@ class Client
     }
 
     /**
-     * Fetches available Sendcloud shipping methods, grouped thanks to common characteristics that can be used as filter.
+     * Fetches available Sendcloud shipping products, meaning groups of shipping methods having common characteristics that can be used as filter.
      * A lot of various filters can be used on this Sendcloud route (@see https://sendcloud.dev/docs/shipping/shipping_products/).
      * Only a part of them are in the parameters below.
      *
@@ -151,11 +150,11 @@ class Client
      * @param string|null $weightUnit Required if parameter $weight is not null.
      * Only one of these values: {@see ShippingProduct::WEIGHT_UNITS}.
      * @param bool|null $withReturn When true, methods returned can be used for making a return shipment.
-     * @return ShippingMethod[]
+     * @return ShippingProduct[]
      * @throws SendcloudClientException
      * @see https://sendcloud.dev/docs/shipping/shipping_products/
      */
-    public function getShippingMethodsWithoutPrice(
+    public function getShippingProducts(
         ?string $deliveryMode = null,
         ?string $fromCountry = null,
         ?string $toCountry = null,
@@ -208,17 +207,11 @@ class Client
             ]);
             $shippingProductsData = json_decode((string)$response->getBody(), true);
 
-            $shippingMethods = [];
-            foreach ($shippingProductsData as $shippingProductData) {
-                $shippingMethods = array_merge(
-                    $shippingMethods,
-                    ShippingMethod::fromShippingProductData($shippingProductData)
-                );
-            }
+            $shippingProducts = array_map(fn (array $shippingProductData) => (
+                ShippingProduct::fromData($shippingProductData)
+            ), $shippingProductsData);
 
-            ShippingMethodService::sortByCarrierAndName($shippingMethods);
-
-            return $shippingMethods;
+            return $shippingProducts;
         } catch (TransferException $exception) {
             throw Utility::parseGuzzleException(
                 $exception,
