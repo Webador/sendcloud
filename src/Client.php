@@ -114,9 +114,7 @@ class Client
             ]);
             $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
 
-            $shippingMethods = array_map(fn (array $shippingMethodData) => (
-                ShippingMethod::fromData($shippingMethodData)
-            ), $shippingMethodsData);
+            $shippingMethods = array_map(ShippingMethod::fromData(...), $shippingMethodsData);
 
             usort($shippingMethods, ShippingMethod::compareByCarrierAndName(...));
 
@@ -207,11 +205,7 @@ class Client
             ]);
             $shippingProductsData = json_decode((string)$response->getBody(), true);
 
-            $shippingProducts = array_map(fn (array $shippingProductData) => (
-                ShippingProduct::fromData($shippingProductData)
-            ), $shippingProductsData);
-
-            return $shippingProducts;
+            return array_map(ShippingProduct::fromData(...), $shippingProductsData);
         } catch (TransferException $exception) {
             throw Utility::parseGuzzleException(
                 $exception,
@@ -576,9 +570,7 @@ class Client
             $response = $this->guzzleClient->get('user/addresses/sender');
             $senderAddressesData = json_decode((string)$response->getBody(), true)['sender_addresses'];
 
-            return array_map(function (array $senderAddressData) {
-                return SenderAddress::fromData($senderAddressData);
-            }, $senderAddressesData);
+            return array_map(SenderAddress::fromData(...), $senderAddressesData);
         } catch (TransferException $exception) {
             throw Utility::parseGuzzleException($exception, 'Could not retrieve sender addresses.');
         }
