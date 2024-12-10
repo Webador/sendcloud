@@ -13,6 +13,7 @@ use JouwWeb\Sendcloud\Model\Address;
 use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
+use JouwWeb\Sendcloud\Model\ShippingProduct;
 use JouwWeb\Sendcloud\ServicePointsClient;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +29,9 @@ class ClientTest extends TestCase
 
     public function setUp(): void
     {
+        # Turn on error reporting
+        error_reporting(E_ALL);
+
         $this->client = new Client('handsome public key', 'gorgeous secret key', 'aPartnerId');
         $this->servicePointsClient = new ServicePointsClient('handsome public key', 'gorgeous secret key', 'aPartnerId');
 
@@ -114,6 +118,148 @@ class ClientTest extends TestCase
         });
 
         $this->client->getShippingMethods(10, 11, true);
+    }
+
+    public function testGetShippingProducts(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+            $this->assertEquals([
+                'GET',
+                'shipping-products',
+                ['query' => [
+                    'from_country' => 'NL',
+                ]],
+            ], func_get_args());
+
+            $shippingProduct1 = '{"name": "Shipping product 1", "carrier": "carrier_code_1", "available_functionalities": {"last_mile": ["home_delivery"], "returns": [false]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 51, "max_weight": 1001}}, {"id": 1, "name": "A- Low weight shipment","properties": { "min_weight": 1, "max_weight": 51}}],"weight_range":{"min_weight": 1,"max_weight": 1001}}';
+            $shippingProduct2 = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"], "returns": [true]},"methods": [{"id": 3, "name": "C- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}],"weight_range":{"min_weight": 1000,"max_weight": 2001}}';
+
+            return new Response(
+                200,
+                [],
+                "[$shippingProduct1, $shippingProduct2]"
+            );
+        });
+
+        $shippingProducts = $this->client->getShippingProducts(fromCountry: 'NL');
+
+        // All shipping products should be in result
+        $this->assertCount(2, $shippingProducts);
+
+        // All shipping methods should be in result, inside the different shipping products
+        $this->assertCount(2, $shippingProducts[0]->getMethods());
+        $this->assertCount(1, $shippingProducts[1]->getMethods());
+
+        $this->assertEquals(['Shipping product 1', 'Shipping product 2'], array_map(fn ($product) => $product->getName(), $shippingProducts));
+
+        $this->assertEquals(1, $shippingProducts[0]->getMinimumWeight());
+        $this->assertEquals(1001, $shippingProducts[0]->getMaximumWeight());
+        $this->assertEquals('carrier_code_1', $shippingProducts[0]->getCarrier());
+        $this->assertEquals(false, $shippingProducts[0]->getWithReturn());
+        $this->assertEquals(true, $shippingProducts[1]->getWithReturn());
+
+        // Shipping methods order should be ascending by their name
+        $this->assertEquals(['A- Low weight shipment', 'B- Heavy weight shipment'], array_map(fn ($product) => $product->getName(), $shippingProducts[0]->getMethods()));
+
+        $this->assertFalse($shippingProducts[0]->getAllowServicePoints());
+        $this->assertTrue($shippingProducts[1]->getAllowServicePoints());
+
+        // Prices should be empty
+        $this->assertEquals([], $shippingProducts[0]->getMethods()[0]->getPrices());
+        $this->assertNull($shippingProducts[0]->getMethods()[0]->getPriceForCountry('EN'));
+    }
+
+    public function testGetShippingProductsCaseAllOptionalArguments(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+            $this->assertEquals([
+                'GET',
+                'shipping-products',
+                ['query' => [
+                    'from_country' => 'NL',
+                    'last_mile' => ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
+                    'to_country' => 'EN',
+                    'carrier' => 'carrier_code_2',
+                    'weight' => 1500,
+                    'weight_unit' => ShippingProduct::WEIGHT_UNIT_GRAM,
+                    'returns' => true,
+                ]],
+            ], func_get_args());
+
+            $shippingProduct = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}],"weight_range":{"min_weight": 1000,"max_weight": 2001}}';
+
+            return new Response(
+                200,
+                [],
+                "[$shippingProduct]"
+            );
+        });
+
+        $shippingMethods = $this->client->getShippingProducts(
+            'NL',
+            ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
+            'EN',
+            'carrier_code_2',
+            1500,
+            ShippingProduct::WEIGHT_UNIT_GRAM,
+            1
+        );
+
+        $this->assertCount(1, $shippingMethods);
+    }
+
+    public function testGetShippingProductsCaseEmptyResponse(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+            $this->assertEquals([
+                'GET',
+                'shipping-products',
+                ['query' => [
+                    'from_country' => 'NL'
+                ]],
+            ], func_get_args());
+
+            return new Response(
+                200,
+                [],
+                "[]"
+            );
+        });
+
+        $shippingMethods = $this->client->getShippingProducts(fromCountry: 'NL');
+
+        $this->assertCount(0, $shippingMethods);
+    }
+
+    public function testGetShippingProductsCaseBadArgumentDeliveryMode(): void
+    {
+        $this->expectExceptionMessage('Delivery mode "abc" is not available to get shipping products.');
+
+        $this->client->getShippingProducts(
+            fromCountry: 'NL',
+            deliveryMode: 'abc',
+        );
+    }
+
+    public function testGetShippingProductsCaseArgumentWeightUnitMissing(): void
+    {
+        $this->expectExceptionMessage('Weight unit is needed to get shipping products.');
+
+        $this->client->getShippingProducts(
+            fromCountry: 'NL',
+            weight: 1500,
+        );
+    }
+
+    public function testGetShippingProductsCaseBadArgumentWeightUnit(): void
+    {
+        $this->expectExceptionMessage('Weight unit "ton" provided is not available to get shipping products.');
+
+        $this->client->getShippingProducts(
+            fromCountry: 'NL',
+            weight: 1500,
+            weightUnit: 'ton',
+        );
     }
 
     public function testGetSenderAddresses(): void
