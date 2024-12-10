@@ -126,7 +126,9 @@ class ClientTest extends TestCase
             $this->assertEquals([
                 'GET',
                 'shipping-products',
-                ['query' => []],
+                ['query' => [
+                    'from_country' => 'NL',
+                ]],
             ], func_get_args());
 
             $shippingProduct1 = '{"name": "Shipping product 1", "carrier": "carrier_code_1", "available_functionalities": {"last_mile": ["home_delivery"], "returns": [false]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 51, "max_weight": 1001}}, {"id": 1, "name": "A- Low weight shipment","properties": { "min_weight": 1, "max_weight": 51}}],"weight_range":{"min_weight": 1,"max_weight": 1001}}';
@@ -139,7 +141,7 @@ class ClientTest extends TestCase
             );
         });
 
-        $shippingProducts = $this->client->getShippingProducts();
+        $shippingProducts = $this->client->getShippingProducts(fromCountry: 'NL');
 
         // All shipping products should be in result
         $this->assertCount(2, $shippingProducts);
@@ -174,8 +176,8 @@ class ClientTest extends TestCase
                 'GET',
                 'shipping-products',
                 ['query' => [
-                    'last_mile' => ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
                     'from_country' => 'NL',
+                    'last_mile' => ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
                     'to_country' => 'EN',
                     'carrier' => 'carrier_code_2',
                     'weight' => 1500,
@@ -194,8 +196,8 @@ class ClientTest extends TestCase
         });
 
         $shippingMethods = $this->client->getShippingProducts(
-            ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
             'NL',
+            ShippingProduct::DELIVERY_MODE_SERVICE_POINT,
             'EN',
             'carrier_code_2',
             1500,
@@ -212,7 +214,9 @@ class ClientTest extends TestCase
             $this->assertEquals([
                 'GET',
                 'shipping-products',
-                ['query' => []],
+                ['query' => [
+                    'from_country' => 'NL'
+                ]],
             ], func_get_args());
 
             return new Response(
@@ -222,7 +226,7 @@ class ClientTest extends TestCase
             );
         });
 
-        $shippingMethods = $this->client->getShippingProducts();
+        $shippingMethods = $this->client->getShippingProducts(fromCountry: 'NL');
 
         $this->assertCount(0, $shippingMethods);
     }
@@ -232,6 +236,7 @@ class ClientTest extends TestCase
         $this->expectExceptionMessage('Delivery mode "abc" is not available to get shipping products.');
 
         $this->client->getShippingProducts(
+            fromCountry: 'NL',
             deliveryMode: 'abc',
         );
     }
@@ -241,6 +246,7 @@ class ClientTest extends TestCase
         $this->expectExceptionMessage('Weight unit is needed to get shipping products.');
 
         $this->client->getShippingProducts(
+            fromCountry: 'NL',
             weight: 1500,
         );
     }
@@ -250,6 +256,7 @@ class ClientTest extends TestCase
         $this->expectExceptionMessage('Weight unit "ton" provided is not available to get shipping products.');
 
         $this->client->getShippingProducts(
+            fromCountry: 'NL',
             weight: 1500,
             weightUnit: 'ton',
         );

@@ -137,9 +137,9 @@ class Client
      *
      * Warning, by contrast with getShippingMethods(), here the prices of shipping methods are not given.
      *
+     * @param string|null $fromCountry The sender address to ship from. A country ISO 2 code.
      * @param value-of<ShippingProduct::DELIVERY_MODES>|null $deliveryMode The delivery mode that should be used by the returned shipping methods.
      * Only one of these values: {@see ShippingProduct::DELIVERY_MODES}.
-     * @param string|null $fromCountry The sender address to ship from. A country ISO 2 code.
      * @param string|null $toCountry The receiver address to ship to. A country ISO 2 code.
      * @param string|null $carrier The carrier of shipping methods that should be filtered on, this carrier must be
      * enabled on the contract to have a result on this filter.
@@ -153,8 +153,8 @@ class Client
      * @see https://sendcloud.dev/docs/shipping/shipping_products/
      */
     public function getShippingProducts(
+        string $fromCountry,
         ?string $deliveryMode = null,
-        ?string $fromCountry = null,
         ?string $toCountry = null,
         ?string $carrier = null,
         ?int $weight = null,
