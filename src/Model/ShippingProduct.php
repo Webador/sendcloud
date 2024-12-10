@@ -112,7 +112,7 @@ class ShippingProduct
             );
         }
 
-        usort($shippingMethods, [ShippingMethod::class, 'compareByCarrierAndName']);
+        usort($shippingMethods, ShippingMethod::compareByCarrierAndName(...));
 
         return new self(
             (string)$data['name'],

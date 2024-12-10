@@ -118,7 +118,7 @@ class Client
                 ShippingMethod::fromData($shippingMethodData)
             ), $shippingMethodsData);
 
-            usort($shippingMethods, [ShippingMethod::class, 'compareByCarrierAndName']);
+            usort($shippingMethods, ShippingMethod::compareByCarrierAndName(...));
 
             return $shippingMethods;
         } catch (TransferException $exception) {
