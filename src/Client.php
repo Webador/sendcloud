@@ -75,6 +75,9 @@ class Client
      * @param SenderAddress|int|null $senderAddress The sender address to ship from. Methods available to all of your
      * account's sender addresses will be retrieved when null.
      * @param bool $returnMethodsOnly When true, methods for making a return are returned instead.
+     * @param int from_postal_code
+     * @param int to_postal_code
+     * @param int to_country iso2 code
      * @return ShippingMethod[]
      * @throws SendcloudClientException
      * @see https://sendcloud.dev/docs/shipping/shipping-methods/
@@ -82,7 +85,11 @@ class Client
     public function getShippingMethods(
         ?int $servicePointId = null,
         SenderAddress|int|null $senderAddress = null,
-        bool $returnMethodsOnly = false
+        bool $returnMethodsOnly = false,
+        ?int $from_postal_code =null,
+        ?int $to_postal_code =null,
+        ?string $to_country =null,
+        
     ): array {
         try {
             $queryData = [];
@@ -107,6 +114,18 @@ class Client
 
             if ($returnMethodsOnly) {
                 $queryData['is_return'] = 'true';
+            }
+
+            if ($from_postal_code) {
+                $queryData['from_postal_code'] = $from_postal_code;
+            }
+
+            if ($to_postal_code) {
+                $queryData['to_postal_code'] = $to_postal_code;
+            }
+
+            if ($to_country) {
+                $queryData['to_country'] = $to_country;
             }
 
             $response = $this->guzzleClient->get('shipping_methods', [
