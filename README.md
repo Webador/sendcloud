@@ -1,4 +1,4 @@
-# Sendcloud
+e# Sendcloud
 
 This is a PHP library that provides a simple way to communicate with the Sendcloud API. It was created because there
 were no simple alternatives that follow good object-oriented code practices.
@@ -109,4 +109,4 @@ try {
 ```
 
 ## Installation
-`composer require jouwweb/sendcloud`
+`composer require akali22/sendcloud`
