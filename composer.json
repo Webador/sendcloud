@@ -9,13 +9,13 @@
         "parcel",
         "webhook"
     ],
-    "homepage": "https://github.com/Webador/sendcloud",
+    "homepage": "https://github.com/akali22/sendcloud",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Webador",
-            "email": "tech@webador.com"
+            "name": "akali22",
+            "email": ""
         }
     ],
     "scripts": {
