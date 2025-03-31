@@ -19,6 +19,9 @@ use JouwWeb\Sendcloud\Model\ShippingProduct;
 use JouwWeb\Sendcloud\Model\User;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Client to perform calls on the Sendcloud API.
@@ -27,31 +30,30 @@ class Client
 {
     protected const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
 
-    protected \GuzzleHttp\Client $guzzleClient;
+    protected HttpClientInterface $httpClient;
 
     public function __construct(
-        protected string $publicKey,
-        protected string $secretKey,
-        protected ?string $partnerId = null,
-        ?string $apiBaseUrl = null
+        string $publicKey,
+        #[\SensitiveParameter]
+        string $secretKey,
+        #[\SensitiveParameter]
+        ?string $partnerId = null,
+        ?string $apiBaseUrl = null,
+        ?HttpClientInterface $httpClient = null,
     ) {
-        $clientConfig = [
-            'base_uri' => $apiBaseUrl ?: self::API_BASE_URL,
+        $requestOptions = [
+            'base_uri' => $apiBaseUrl ?? self::API_BASE_URL,
             'timeout' => 60, // Mainly because the shipping methods endpoint can take a very long time to respond.
-            'auth' => [
-                $publicKey,
-                $secretKey,
-            ],
+            'auth_basic' => [$publicKey, $secretKey],
             'headers' => [
                 'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
             ],
         ];
-
-        if ($this->partnerId) {
-            $clientConfig['headers']['Sendcloud-Partner-Id'] = $this->partnerId;
+        if ($partnerId) {
+            $requestOptions['headers']['Sendcloud-Partner-Id'] = $partnerId;
         }
 
-        $this->guzzleClient = new \GuzzleHttp\Client($clientConfig);
+        $this->httpClient = $httpClient?->withOptions($requestOptions) ?? HttpClient::create($requestOptions);
     }
 
     /**
@@ -62,8 +64,9 @@ class Client
     public function getUser(): User
     {
         try {
-            return User::fromData(json_decode((string)$this->guzzleClient->get('user')->getBody(), true)['user']);
-        } catch (TransferException $exception) {
+            $responseData = $this->httpClient->request('GET', 'user')->toArray();
+            return User::fromData($responseData['user']);
+        } catch (TransportExceptionInterface $exception) {
             throw Utility::parseGuzzleException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
     }

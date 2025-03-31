@@ -4,12 +4,12 @@ namespace JouwWeb\Sendcloud;
 
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\TransferException;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Exception\SendcloudWebhookException;
 use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class Utility
 {
@@ -86,7 +86,7 @@ class Utility
     }
 
     public static function parseGuzzleException(
-        TransferException $exception,
+        TransportExceptionInterface $exception,
         string $defaultMessage
     ): SendcloudRequestException {
         $message = $defaultMessage;
