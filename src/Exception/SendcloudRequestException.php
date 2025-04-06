@@ -10,12 +10,14 @@ class SendcloudRequestException extends SendcloudClientException
     public const CODE_NOT_ALLOWED_TO_ANNOUNCE = 2;
     public const CODE_UNAUTHORIZED = 3;
     public const CODE_CONNECTION_FAILED = 4;
+    public const CODE_UNEXPECTED_RESPONSE = 5;
     public const CODES = [
         self::CODE_UNKNOWN,
         self::CODE_NO_ADDRESS_DATA,
         self::CODE_NOT_ALLOWED_TO_ANNOUNCE,
         self::CODE_UNAUTHORIZED,
         self::CODE_CONNECTION_FAILED,
+        self::CODE_UNEXPECTED_RESPONSE,
     ];
 
     public function __construct(

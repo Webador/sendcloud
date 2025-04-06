@@ -2,11 +2,6 @@
 
 namespace Test\JouwWeb\Sendcloud;
 
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\TransferException;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Response;
 use JouwWeb\Sendcloud\Client;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Model\Address;
@@ -14,48 +9,34 @@ use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\ShippingProduct;
-use JouwWeb\Sendcloud\ServicePointsClient;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 class ClientTest extends TestCase
 {
-    protected Client $client;
-
-    protected ServicePointsClient $servicePointsClient;
-
-    /** @var \GuzzleHttp\Client&MockObject */
-    protected \GuzzleHttp\Client $guzzleClientMock;
+    private Client $client;
 
     public function setUp(): void
     {
-        # Turn on error reporting
-        error_reporting(E_ALL);
-
-        $this->client = new Client('handsome public key', 'gorgeous secret key', 'aPartnerId');
-        $this->servicePointsClient = new ServicePointsClient('handsome public key', 'gorgeous secret key', 'aPartnerId');
-
-        $this->guzzleClientMock = $this->createPartialMock(\GuzzleHttp\Client::class, ['request']);
-
-        // Inject the mock HTTP client through reflection. The alternative is to pass it into the ctor but that would
-        // require us to use PSR-7 requests instead of Guzzle's more convenient usage.
-        $clientProperty = new \ReflectionProperty(Client::class, 'guzzleClient');
-        $clientProperty->setValue($this->client, $this->guzzleClientMock);
-
-        $clientProperty = new \ReflectionProperty(ServicePointsClient::class, 'guzzleClient');
-        $clientProperty->setValue($this->servicePointsClient, $this->guzzleClientMock);
+        $this->client = new Client(
+            publicKey: 'handsome public key',
+            secretKey: 'gorgeous secret key',
+            partnerId: 'aPartnerId',
+            // See configureResponses() for an explanation why this is not a property.
+            httpClient: new MockHttpClient(),
+        );
     }
 
     public function testGetUser(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '{"user":{"address":"Insulindelaan 115","city":"Eindhoven","company_logo":null,"company_name":"Sendcloud","data":[],"email":"johndoe@sendcloud.nl","invoices":[{"date":"05-06-201811:58:52","id":1,"isPayed":false,"items":"https://local.sendcloud.sc/api/v2/user/invoices/1","price_excl":77.4,"price_incl":93.65,"ref":"1","type":"periodic"}],"modules":[{"activated":true,"id":5,"name":"SendcloudClient","settings":null,"short_name":"sendcloud_client"},{"id":3,"name":"PrestashopIntegration","settings":{"url_webshop":"http://localhost/testing/prestashop","api_key":"O8ALXHMM24QULWM213CC6SGQ5VDJKC8W"},"activated":true,"short_name":"prestashop"}],"postal_code":"5642CV","registered":"2018-05-2912:52:51","telephone":"+31626262626","username":"johndoe"}}'
-        ));
+        $response = new MockResponse('{"user":{"address":"Insulindelaan 115","city":"Eindhoven","company_logo":null,"company_name":"Sendcloud","data":[],"email":"johndoe@sendcloud.nl","invoices":[{"date":"05-06-201811:58:52","id":1,"isPayed":false,"items":"https://local.sendcloud.sc/api/v2/user/invoices/1","price_excl":77.4,"price_incl":93.65,"ref":"1","type":"periodic"}],"modules":[{"activated":true,"id":5,"name":"SendcloudClient","settings":null,"short_name":"sendcloud_client"},{"id":3,"name":"PrestashopIntegration","settings":{"url_webshop":"http://localhost/testing/prestashop","api_key":"O8ALXHMM24QULWM213CC6SGQ5VDJKC8W"},"activated":true,"short_name":"prestashop"}],"postal_code":"5642CV","registered":"2018-05-2912:52:51","telephone":"+31626262626","username":"johndoe"}}');
+        $this->configureResponses($response);
 
         $user = $this->client->getUser();
 
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/user', $response->getRequestUrl());
         $this->assertEquals('johndoe', $user->getUsername());
         $this->assertEquals('Sendcloud', $user->getCompanyName());
         $this->assertEquals('+31626262626', $user->getPhoneNumber());
@@ -68,7 +49,7 @@ class ClientTest extends TestCase
 
     public function testGetShippingMethods(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
                 'GET',
                 'shipping_methods',
@@ -99,7 +80,7 @@ class ClientTest extends TestCase
 
     public function testGetShippingMethodsOptionalArguments(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
                 'GET',
                 'shipping_methods',
@@ -122,7 +103,7 @@ class ClientTest extends TestCase
 
     public function testGetShippingProducts(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
                 'GET',
                 'shipping-products',
@@ -171,7 +152,7 @@ class ClientTest extends TestCase
 
     public function testGetShippingProductsCaseAllOptionalArguments(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
                 'GET',
                 'shipping-products',
@@ -210,7 +191,7 @@ class ClientTest extends TestCase
 
     public function testGetShippingProductsCaseEmptyResponse(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturnCallback(function () {
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
             $this->assertEquals([
                 'GET',
                 'shipping-products',
@@ -264,7 +245,7 @@ class ClientTest extends TestCase
 
     public function testGetSenderAddresses(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"sender_addresses":[{"id":92837,"company_name":"AwesomeCo Inc.","contact_name":"Bertus Bernardus","email":"bertus@awesomeco.be","telephone":"+31683749586","street":"Wegstraat","house_number":"233","postal_box":"","postal_code":"8398","city":"Brussel","country":"BE"},{"id":28397,"company_name":"AwesomeCo Inc. NL","contact_name":"","email":"","telephone":"0645000000","street":"Torenallee","house_number":"20","postal_box":"","postal_code":"5617 BC","city":"Eindhoven","country":"NL"}]}'
@@ -280,7 +261,7 @@ class ClientTest extends TestCase
 
     public function testCreateParcel(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
@@ -309,7 +290,7 @@ class ClientTest extends TestCase
 
     public function testCreateParcelWithVerboseError(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001", "errors" : {"name": "This field is required."}}}'
@@ -348,7 +329,7 @@ class ClientTest extends TestCase
         $parcel_json_1 = '{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
         $parcel_json_2 = '{"id":8293795,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
 
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcels":['.$parcel_json_1.','.$parcel_json_2.']}'
@@ -392,7 +373,7 @@ class ClientTest extends TestCase
     {
         $parcel_json = '{"name":"Baron van der Zanden","company_name":"","address":"straat","address_2":"CA","house_number":"23","city":"Gehucht","postal_code":"9283DD","country":"NL","email":"baron@vanderzanden.nl","telephone":"Blok 3","country_state":"","order_number":"201900001","weight":"2.486","request_label":true,"shipment":{"id":1},"quantity":2}';
 
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcels": [], "failed_parcels": [{"parcel":'.$parcel_json.', "errors": { "name": ["This field is required."]}}]}'
@@ -417,7 +398,7 @@ class ClientTest extends TestCase
 
     public function testCreateParcelCustoms(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')
+        $this->mockHttpClient->expects($this->once())->method('request')
             ->willReturnCallback(function () {
                 $this->assertEquals([
                     'POST',
@@ -462,7 +443,7 @@ class ClientTest extends TestCase
     public function testUpdateParcel(): void
     {
         // Test that update only updates the address details (and not e.g., order number/weight)
-        $this->guzzleClientMock->expects($this->once())->method('request')
+        $this->mockHttpClient->expects($this->once())->method('request')
             ->willReturnCallback(function () {
                 $this->assertEquals([
                     'PUT',
@@ -484,7 +465,7 @@ class ClientTest extends TestCase
 
     public function testCreateLabel(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcel":{"id":8293794,"address":"Rosebud 2134 A","address_2":"","address_divided":{"street":"Rosebud","house_number":"2134"},"city":"Almanda","company_name":"Some company","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"completelydifferent@email.com","name":"Completely different person","postal_code":"9238 DD","reference":"0","shipment":{"id":117,"name":"DHLForYou Drop Off"},"status":{"id":1000,"message":"Ready to send"},"to_service_point":null,"telephone":"+31699999999","tracking_number":"JVGL4004421100020097","weight":"2.490","label":{"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794","normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3"]},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":"parcel","shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":117,"external_order_id":"8293794","external_shipment_id":"201900001","carrier":{"code":"dhl"},"tracking_url":"https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd"}}'
@@ -504,7 +485,7 @@ class ClientTest extends TestCase
 
     public function testGetParcel(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             '{"parcel":{"id":2784972,"address":"Teststraat 12 A10","address_2":"","address_divided":{"street":"Teststraat","house_number":"12"},"city":"Woonplaats","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"27-08-2018 11:32:04","email":"sjoerd@jouwweb.nl","name":"Sjoerd Nuijten","postal_code":"7777 AA","reference":"0","shipment":{"id":8,"name":"Unstamped letter"},"status":{"id":11,"message":"Delivered"},"to_service_point":null,"telephone":"","tracking_number":"3SYZXG192833973","weight":"1.000","label":{"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer/13846453","normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer/13846453?start_from=3"]},"customs_declaration":{},"order_number":"201806006","insured_value":0,"total_insured_value":0,"to_state":null,"customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":"parcel","shipment_uuid":"cb1e0f2d-4e7f-456b-91fe-0bcf09847d10","shipping_method":39,"external_order_id":"2784972","external_shipment_id":"201806006","carrier":{"code":"postnl"},"tracking_url":"https://tracking.sendcloud.sc/forward?carrier=postnl&code=3SYZXG192833973&destination=NL&lang=nl&source=NL&type=parcel&verification=7777AA"}}'
@@ -518,7 +499,7 @@ class ClientTest extends TestCase
 
     public function testCancelParcel(): void
     {
-        $this->guzzleClientMock->expects($this->exactly(2))->method('request')->willReturnCallback(function ($method, $url) {
+        $this->mockHttpClient->expects($this->exactly(2))->method('request')->willReturnCallback(function ($method, $url) {
             $parcelId = (int)explode('/', $url)[1];
 
             if ($parcelId === 8293794) {
@@ -538,7 +519,7 @@ class ClientTest extends TestCase
 
     public function testParseRequestException(): void
     {
-        $this->guzzleClientMock->method('request')->willThrowException(new RequestException(
+        $this->mockHttpClient->method('request')->willThrowException(new RequestException(
             "Client error: `GET https://panel.sendcloud.sc/api/v2/user` resulted in a `401 Unauthorized` response:\n{\"error\":{\"message\":\"Invalid username/password.\",\"request\":\"api/v2/user\",\"code\":401}}\n))",
             new Request('GET', 'https://some.uri'),
             new Response(401, [], '{"error":{"message":"Invalid username/password.","request":"api/v2/user","code":401}}')
@@ -556,7 +537,7 @@ class ClientTest extends TestCase
 
     public function testParseRequestExceptionNoBody(): void
     {
-        $this->guzzleClientMock->method('request')->willThrowException(new ConnectException(
+        $this->mockHttpClient->method('request')->willThrowException(new ConnectException(
             'Failed to reach server or something.',
             new Request('GET', 'https://some.uri')
         ));
@@ -573,7 +554,7 @@ class ClientTest extends TestCase
 
     public function testGetReturnPortalUrl(): void
     {
-        $this->guzzleClientMock->method('request')->willReturn(new Response(
+        $this->mockHttpClient->method('request')->willReturn(new Response(
             200,
             [],
             '{"url":"https://awesome.shipping-portal.com/returns/initiate/HocusBogusPayloadPath/"}'
@@ -587,7 +568,7 @@ class ClientTest extends TestCase
 
     public function testGetReturnPortalUrlNotFound(): void
     {
-        $this->guzzleClientMock->method('request')->willThrowException(new RequestException(
+        $this->mockHttpClient->method('request')->willThrowException(new ClientException(
             "Client error: `GET https://panel.sendcloud.sc/api/v2/parcels/23676385/return_portal_url` resulted in a `404 Not Found` response:\n{\"url\":null}\n",
             new Request('GET', 'https://some.url'),
             new Response(404, [], '{"url":null}')
@@ -599,7 +580,7 @@ class ClientTest extends TestCase
     public function testGetBulkLabelPdf(): void
     {
         $requestNumber = 0;
-        $this->guzzleClientMock->expects($this->exactly(2))->method('request')->willReturnCallback(
+        $this->mockHttpClient->expects($this->exactly(2))->method('request')->willReturnCallback(
             function ($method, $url, $data) use (&$requestNumber) {
                 $requestNumber++;
 
@@ -632,105 +613,6 @@ class ClientTest extends TestCase
         $this->assertEquals('pdfdata', $pdf);
     }
 
-    public function testSearchServicePoints(): void
-    {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '[
-                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true},
-                {"id":2,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true}
-            ]'
-        ));
-
-        $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL');
-
-        $this->assertCount(2, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getId());
-        $this->assertEquals(2, $servicePoints[1]->getId());
-    }
-
-    public function testSearchServicePointWithDistance(): void
-    {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '[
-                {"id":1,"code":"217165","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"Media Markt Eindhoven Centrum B.V.","street":"Boschdijktunnel","house_number":"1","postal_code":"5611AG","city":"EINDHOVEN","latitude":"51.441444","longitude":"5.475185","email":"","phone":"","homepage":"","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["10:00 - 20:00"],"1":["10:00 - 20:00"],"2":["10:00 - 20:00"],"3":["10:00 - 20:00"],"4":["10:00 - 20:00"],"5":["10:00 - 18:00"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":381}
-            ]'
-        ));
-
-        $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL', latitude: 0, longitude: 0);
-
-        $this->assertCount(1, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getId());
-        $this->assertNotNull($servicePoints[0]->getDistance());
-    }
-
-    public function testGetServicePoint(): void
-    {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '{"id":26,"code":"4c8181feec8f49fdbe67d9c9f6aaaf6f","is_active":true,"shop_type":null,"extra_data":{"partner_name":"PostNL","sales_channel":"AFHAALPUNT","terminal_type":"NRS","retail_network_id":"PNPNL-01"},"name":"DUMMY-3f1d6384391f45ce","street":"Sesamstraat","house_number":"40","postal_code":"5699YE","city":"Eindhoven","latitude":"51.440400","longitude":"5.475800","email":"devnull@sendcloud.nl","phone":"+31401234567","homepage":"https://www.sendcloud.nl","carrier":"postnl","country":"NL","formatted_opening_times":{"0":["13:30 - 17:15"],"1":["09:00 - 12:00","13:30 - 17:15"],"2":["09:00 - 12:00","13:30 - 17:15"],"3":[],"4":["09:00 - 12:00","13:30 - 17:15"],"5":["09:00 - 12:00","13:30 - 17:15"],"6":[]},"open_tomorrow":true,"open_upcoming_week":true,"distance":361}'
-        ));
-
-        $extraData = [
-            'partner_name' => 'PostNL',
-            'sales_channel' => 'AFHAALPUNT',
-            'terminal_type' => 'NRS',
-            'retail_network_id' => 'PNPNL-01',
-        ];
-
-        $formattedOpeningTimes = [
-            '0' => [
-                '13:30 - 17:15',
-            ],
-            '1' => [
-                '09:00 - 12:00',
-                '13:30 - 17:15',
-            ],
-            '2' =>  [
-                '09:00 - 12:00',
-                '13:30 - 17:15',
-            ],
-            '3' => [],
-            '4' =>  [
-                '09:00 - 12:00',
-                '13:30 - 17:15',
-            ],
-            '5' => [
-                '09:00 - 12:00',
-                '13:30 - 17:15',
-            ],
-            '6' => [],
-        ];
-
-        $servicePoint = $this->servicePointsClient->getServicePoint(26);
-
-        $this->assertEquals(26, $servicePoint->getId());
-        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->getCode());
-        $this->assertTrue($servicePoint->isActive());
-        $this->assertNull($servicePoint->getShopType());
-        $this->assertEquals($extraData, $servicePoint->getExtraData());
-        $this->assertEquals('DUMMY-3f1d6384391f45ce', $servicePoint->getName());
-        $this->assertEquals('Sesamstraat', $servicePoint->getStreet());
-        $this->assertEquals('40', $servicePoint->getHouseNumber());
-        $this->assertEquals('5699YE', $servicePoint->getPostalCode());
-        $this->assertEquals('Eindhoven', $servicePoint->getCity());
-        $this->assertEquals('51.440400', $servicePoint->getLatitude());
-        $this->assertEquals('5.475800', $servicePoint->getLongitude());
-        $this->assertEquals('devnull@sendcloud.nl', $servicePoint->getEmail());
-        $this->assertEquals('+31401234567', $servicePoint->getPhone());
-        $this->assertEquals('https://www.sendcloud.nl', $servicePoint->getHomepage());
-        $this->assertEquals('postnl', $servicePoint->getCarrier());
-        $this->assertEquals('NL', $servicePoint->getCountry());
-        $this->assertEquals($formattedOpeningTimes, $servicePoint->getFormattedOpeningTimes());
-        $this->assertTrue($servicePoint->isOpenTomorrow());
-        $this->assertTrue($servicePoint->isOpenUpcomingWeek());
-        $this->assertEquals(361, $servicePoint->getDistance());
-    }
-
     public function testGetParcelDocumentErrorsWithAnInvalidDocumentType(): void
     {
         $this->expectExceptionMessage(sprintf('Document type "invalid document type" is not accepted. Valid types: %s.', implode(', ', Parcel::DOCUMENT_TYPES)));
@@ -757,7 +639,7 @@ class ClientTest extends TestCase
 
     public function testGetParcelDocumentRethrowsTheCorrectException(): void
     {
-        $this->guzzleClientMock->method('request')->willThrowException(new TransferException('Whoops'));
+        $this->mockHttpClient->method('request')->willThrowException(new TransferException('Whoops'));
 
         $this->expectException(SendcloudRequestException::class);
         $this->expectExceptionMessage(sprintf('Could not retrieve parcel document "%s" for parcel id "1".', Parcel::DOCUMENT_TYPE_LABEL));
@@ -767,12 +649,25 @@ class ClientTest extends TestCase
 
     public function testGetParcelDocumentReturnsTheRequestedContent(): void
     {
-        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
             'The ZPL content'
         ));
 
         $this->assertEquals('The ZPL content', $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, Parcel::DOCUMENT_CONTENT_TYPE_ZPL, Parcel::DOCUMENT_DPI_203));
+    }
+
+    /**
+     * Responses need to be configured on the client's property because the original mock HTTP client is cloned.
+     *
+     * @param MockResponse|MockResponse[] $responses
+     */
+    private function configureResponses(MockResponse|array $responses): void
+    {
+        $httpClientProperty = new \ReflectionProperty($this->client, 'httpClient');
+        /** @var MockHttpClient $httpClient */
+        $httpClient = $httpClientProperty->getValue($this->client);
+        $httpClient->setResponseFactory($responses);
     }
 }

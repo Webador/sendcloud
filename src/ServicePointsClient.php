@@ -2,44 +2,38 @@
 
 namespace JouwWeb\Sendcloud;
 
-use GuzzleHttp\Exception\TransferException;
-use GuzzleHttp\RequestOptions;
-use GuzzleHttp\Utils;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Model\ServicePoint;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
- * Client to perform calls on the Sendcloud API.
+ * Client to perform calls on the Sendcloud service points API.
  */
 class ServicePointsClient
 {
+    use HttpClientTrait;
+
     protected const API_BASE_URL = 'https://servicepoints.sendcloud.sc/api/v2/';
 
-    protected \GuzzleHttp\Client $guzzleClient;
+    protected HttpClientInterface $httpClient;
 
     public function __construct(
-        protected string $publicKey,
-        protected string $secretKey,
-        protected ?string $partnerId = null,
-        ?string $apiBaseUrl = null
+        string $publicKey,
+        #[\SensitiveParameter]
+        string $secretKey,
+        #[\SensitiveParameter]
+        ?string $partnerId = null,
+        ?string $apiBaseUrl = null,
+        ?HttpClientInterface $httpClient = null,
     ) {
-        $clientConfig = [
-            'base_uri' => $apiBaseUrl ?: self::API_BASE_URL,
-            'timeout' => 10,
-            'auth' => [
-                $publicKey,
-                $secretKey,
-            ],
-            'headers' => [
-                'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
-            ],
-        ];
-
-        if ($this->partnerId) {
-            $clientConfig['headers']['Sendcloud-Partner-Id'] = $this->partnerId;
-        }
-
-        $this->guzzleClient = new \GuzzleHttp\Client($clientConfig);
+        $this->httpClient = $this->createHttpClient(
+            httpClient: $httpClient,
+            apiBaseUrl: $apiBaseUrl ?? self::API_BASE_URL,
+            publicKey: $publicKey,
+            secretKey: $secretKey,
+            partnerId: $partnerId,
+        );
     }
 
     /**
@@ -134,21 +128,19 @@ class ServicePointsClient
             }
 
             // Send request
-            $response = $this->guzzleClient->get('service-points', [
-                RequestOptions::QUERY => $query,
+            $response = $this->httpClient->request('GET', 'service-points', [
+                'query' => $query,
             ]);
 
             // Decode and create ServicePoint objects
-            $json = json_decode((string)$response->getBody(), true);
-
             $servicePoints = [];
-            foreach ($json as $obj) {
-                $servicePoints[] = ServicePoint::fromData($obj);
+            foreach ($response->toArray() as $servicePointData) {
+                $servicePoints[] = ServicePoint::fromData($servicePointData);
             }
 
             return $servicePoints;
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve service point.');
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve service point.');
         }
     }
 
@@ -163,10 +155,10 @@ class ServicePointsClient
         $servicePointId = $servicePoint instanceof ServicePoint ? $servicePoint->getId() : $servicePoint;
 
         try {
-            $response = $this->guzzleClient->get('service-points/' . $servicePointId);
-            return ServicePoint::fromData(json_decode((string)$response->getBody(), true));
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve service point.');
+            $response = $this->httpClient->request('GET', 'service-points/' . $servicePointId);
+            return ServicePoint::fromData($response->toArray());
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve service point.');
         }
     }
 }

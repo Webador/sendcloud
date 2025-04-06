@@ -2,10 +2,6 @@
 
 namespace JouwWeb\Sendcloud;
 
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\TransferException;
-use GuzzleHttp\RequestOptions;
-use GuzzleHttp\Utils;
 use JouwWeb\Sendcloud\Exception\SendcloudClientException;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Exception\SendcloudStateException;
@@ -19,8 +15,8 @@ use JouwWeb\Sendcloud\Model\ShippingProduct;
 use JouwWeb\Sendcloud\Model\User;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
 use Psr\Http\Message\RequestInterface;
-use Symfony\Component\HttpClient\HttpClient;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -28,6 +24,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class Client
 {
+    use HttpClientTrait;
+
     protected const API_BASE_URL = 'https://panel.sendcloud.sc/api/v2/';
 
     protected HttpClientInterface $httpClient;
@@ -35,25 +33,19 @@ class Client
     public function __construct(
         string $publicKey,
         #[\SensitiveParameter]
-        string $secretKey,
+        protected string $secretKey,
         #[\SensitiveParameter]
         ?string $partnerId = null,
         ?string $apiBaseUrl = null,
         ?HttpClientInterface $httpClient = null,
     ) {
-        $requestOptions = [
-            'base_uri' => $apiBaseUrl ?? self::API_BASE_URL,
-            'timeout' => 60, // Mainly because the shipping methods endpoint can take a very long time to respond.
-            'auth_basic' => [$publicKey, $secretKey],
-            'headers' => [
-                'User-Agent' => 'jouwweb/sendcloud ' . Utils::defaultUserAgent(),
-            ],
-        ];
-        if ($partnerId) {
-            $requestOptions['headers']['Sendcloud-Partner-Id'] = $partnerId;
-        }
-
-        $this->httpClient = $httpClient?->withOptions($requestOptions) ?? HttpClient::create($requestOptions);
+        $this->httpClient = $this->createHttpClient(
+            httpClient: $httpClient,
+            apiBaseUrl: $apiBaseUrl ?? self::API_BASE_URL,
+            publicKey: $publicKey,
+            secretKey: $secretKey,
+            partnerId: $partnerId,
+        );
     }
 
     /**
@@ -66,8 +58,8 @@ class Client
         try {
             $responseData = $this->httpClient->request('GET', 'user')->toArray();
             return User::fromData($responseData['user']);
-        } catch (TransportExceptionInterface $exception) {
-            throw Utility::parseGuzzleException($exception, 'An error occurred while fetching the Sendcloud user.');
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'An error occurred while fetching the Sendcloud user.');
         }
     }
 
@@ -112,18 +104,18 @@ class Client
                 $queryData['is_return'] = 'true';
             }
 
-            $response = $this->guzzleClient->get('shipping_methods', [
-                RequestOptions::QUERY => $queryData,
+            $response = $this->httpClient->request('GET', 'shipping_methods', [
+                'query' => $queryData,
             ]);
-            $shippingMethodsData = json_decode((string)$response->getBody(), true)['shipping_methods'];
+            $shippingMethodsData = $response->toArray()['shipping_methods'];
 
             $shippingMethods = array_map(ShippingMethod::fromData(...), $shippingMethodsData);
 
             usort($shippingMethods, ShippingMethod::compareByCarrierAndName(...));
 
             return $shippingMethods;
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException(
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException(
                 $exception,
                 'An error occurred while fetching shipping methods from the Sendcloud API.'
             );
@@ -140,7 +132,7 @@ class Client
      *
      * Warning, by contrast with getShippingMethods(), here the prices of shipping methods are not given.
      *
-     * @param string|null $fromCountry The sender address to ship from. A country ISO 2 code.
+     * @param string $fromCountry The sender address to ship from. A country ISO 2 code.
      * @param value-of<ShippingProduct::DELIVERY_MODES>|null $deliveryMode The delivery mode that should be used by the returned shipping methods.
      * Only one of these values: {@see ShippingProduct::DELIVERY_MODES}.
      * @param string|null $toCountry The receiver address to ship to. A country ISO 2 code.
@@ -167,6 +159,8 @@ class Client
         try {
             $queryData = [];
 
+            $queryData['from_country'] = $fromCountry;
+
             if ($deliveryMode !== null) {
                 if (! in_array($deliveryMode, ShippingProduct::DELIVERY_MODES)) {
                     throw new \InvalidArgumentException(
@@ -174,10 +168,6 @@ class Client
                     );
                 }
                 $queryData['last_mile'] = $deliveryMode;
-            }
-
-            if ($fromCountry !== null) {
-                $queryData['from_country'] = $fromCountry;
             }
 
             if ($toCountry !== null) {
@@ -203,14 +193,14 @@ class Client
                 $queryData['returns'] = true;
             }
 
-            $response = $this->guzzleClient->get('shipping-products', [
-                RequestOptions::QUERY => $queryData,
+            $response = $this->httpClient->request('GET', 'shipping-products', [
+                'query' => $queryData,
             ]);
-            $shippingProductsData = json_decode((string)$response->getBody(), true);
+            $shippingProductsData = $response->toArray();
 
             return array_map(ShippingProduct::fromData(...), $shippingProductsData);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException(
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException(
                 $exception,
                 'An error occurred while fetching shipping products from the Sendcloud API.'
             );
@@ -223,15 +213,11 @@ class Client
      * @param Address $shippingAddress Address to be shipped to.
      * @param int|null $servicePointId The order will be shipped to the service point if supplied. $shippingAddress is
      * still required as it will be printed on the label.
-     * @param string|null $orderNumber
      * @param int|null $weight Weight of the parcel in grams. The default set in Sendcloud will be used if null or zero.
-     * @param string|null $customsInvoiceNumber
      * @param int|null $customsShipmentType One of {@see Parcel::CUSTOMS_SHIPMENT_TYPES}.
      * @param ParcelItem[]|null $items Items contained in the parcel.
      * @param string|null $postNumber Number that may be required to send to a service point.
-     * @param ?ShippingMethod $shippingMethod
      * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
-     * @return Parcel
      * @throws SendcloudRequestException
      * @see https://sendcloud.dev/docs/shipping/create-a-parcel/
      */
@@ -267,20 +253,20 @@ class Client
 
         try {
             $requestOptions = [
-                RequestOptions::JSON => [
+                'json' => [
                     'parcel' => $parcelData,
                 ],
             ];
 
             if (isset($errors)){
-                $requestOptions[RequestOptions::QUERY] = ['errors' => $errors];
+                $requestOptions['query'] = ['errors' => $errors];
             }
 
-            $response = $this->guzzleClient->post('parcels', $requestOptions);
+            $response = $this->httpClient->request('POST', 'parcels', $requestOptions);
 
-            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
+            return Parcel::fromData($response->toArray()['parcel']);
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not create parcel in Sendcloud.');
         }
     }
 
@@ -331,35 +317,35 @@ class Client
             $parcels = [];
 
             $requestOptions = [
-                RequestOptions::JSON => [
+                'responseData' => [
                     'parcels' => [$parcelData],
                 ],
             ];
 
             if (isset($errors)){
-                $requestOptions[RequestOptions::QUERY] = ['errors' => $errors];
+                $requestOptions['query'] = ['errors' => $errors];
             }
 
-            $response = $this->guzzleClient->post('parcels', $requestOptions);
-            $json = json_decode((string)$response->getBody(), true);
+            $response = $this->httpClient->request('POST', 'parcels', $requestOptions);
+            $responseData = $response->toArray();
 
             // Retrieve successfully created parcels
-            foreach ($json['parcels'] as $parcel) {
+            foreach ($responseData['parcels'] as $parcel) {
                 $parcels[] = Parcel::fromData($parcel);
             }
 
             // Retrieve failed parcels
             /*
-            if (isset($json['failed_parcels'])) {
-                foreach ($json['failed_parcels'] as $parcel) {
+            if (isset($responseData['failed_parcels'])) {
+                foreach ($responseData['failed_parcels'] as $parcel) {
                     $parcels[] = Parcel::fromData($parcel);
                 }
             }
             */
 
             return $parcels;
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not create parcel in Sendcloud.');
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not create parcel in Sendcloud.');
         }
     }
 
@@ -376,15 +362,15 @@ class Client
         );
 
         try {
-            $response = $this->guzzleClient->put('parcels', [
-                RequestOptions::JSON => [
+            $response = $this->httpClient->request('PUT', 'parcels', [
+                'json' => [
                     'parcel' => $parcelData,
                 ],
             ]);
 
-            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not update parcel in Sendcloud.');
+            return Parcel::fromData($response->toArray()['parcel']);
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not update parcel in Sendcloud.');
         }
     }
 
@@ -396,8 +382,12 @@ class Client
      * sendcloud control panel
      * @throws SendcloudRequestException
      */
-    public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress, bool $applyShippingRules = false): Parcel
-    {
+    public function createLabel(
+        Parcel|int $parcel,
+        ShippingMethod|int $shippingMethod,
+        SenderAddress|Address|int|null $senderAddress,
+        bool $applyShippingRules = false,
+    ): Parcel {
         $parcelData = $this->createParcelData(
             parcelId: is_int($parcel) ? $parcel : $parcel->getId(),
             requestLabel: true,
@@ -407,15 +397,15 @@ class Client
         );
 
         try {
-            $response = $this->guzzleClient->put('parcels', [
-                RequestOptions::JSON => [
+            $response = $this->httpClient->request('PUT', 'parcels', [
+                'json' => [
                     'parcel' => $parcelData,
                 ],
             ]);
 
-            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not create parcel with Sendcloud.');
+            return Parcel::fromData($response->toArray()['parcel']);
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not create parcel with Sendcloud.');
         }
     }
 
@@ -428,20 +418,18 @@ class Client
     {
         try {
             $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
-            $this->guzzleClient->post(sprintf('parcels/%s/cancel', $parcelId));
+            $this->httpClient->request('POST', sprintf('parcels/%s/cancel', $parcelId));
             return true;
-        } catch (TransferException $exception) {
-            $statusCode = ($exception instanceof RequestException && $exception->hasResponse()
-                ? $exception->getResponse()->getStatusCode()
-                : 0
-            );
-
+        } catch (ExceptionInterface $exception) {
             // Handle documented rejections
-            if (in_array($statusCode, [400, 410])) {
+            if (
+                $exception instanceof HttpExceptionInterface &&
+                in_array($exception->getResponse()->getStatusCode(), [400, 410])
+            ){
                 return false;
             }
 
-            throw Utility::parseGuzzleException($exception, 'An error occurred while cancelling the parcel.');
+            throw Utility::parseHttpClientException($exception, 'An error occurred while cancelling the parcel.');
         }
     }
 
@@ -471,9 +459,9 @@ class Client
         }
 
         try {
-            return (string)$this->guzzleClient->get($labelUrl)->getBody();
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve label.');
+            return $this->httpClient->request('GET', $labelUrl)->getContent();
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve label.');
         }
     }
 
@@ -500,27 +488,28 @@ class Client
         }
 
         try {
-            $response = $this->guzzleClient->post('labels', [
-                RequestOptions::JSON => [
+            $response = $this->httpClient->request('POST', 'labels', [
+                'json' => [
                     'label' => [
                         'parcels' => $parcelIds,
                     ]
                 ],
             ]);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve label information.');
+
+            $labelData = $response->toArray();
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve label information.');
         }
 
-        $labelData = json_decode((string)$response->getBody(), true);
         $labelUrl = Utility::getLabelUrlFromData($labelData, $format);
         if (!$labelUrl) {
             throw new SendcloudStateException('No label URL could be obtained from the response.');
         }
 
         try {
-            return (string)$this->guzzleClient->get($labelUrl)->getBody();
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve label PDF data.');
+            return $this->httpClient->request('GET', $labelUrl)->getContent();
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve label PDF data.');
         }
     }
 
@@ -552,12 +541,16 @@ class Client
 
         try {
             $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
-            return (string)$this->guzzleClient->get(sprintf('parcels/%s/documents/%s', $parcelId, $documentType), [
-                RequestOptions::QUERY => ['dpi' => $dpi],
-                RequestOptions::HEADERS => ['Accept' => $contentType],
-            ])->getBody();
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, sprintf('Could not retrieve parcel document "%s" for parcel id "%d".', $documentType, $parcelId));
+            return $this->httpClient->request('GET', sprintf('parcels/%s/documents/%s', $parcelId, $documentType), [
+                'query' => [
+                    'dpi' => $dpi,
+                ],
+                'headers' => [
+                    'Accept' => $contentType,
+                ],
+            ])->getContent();
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, sprintf('Could not retrieve parcel document "%s" for parcel id "%d".', $documentType, $parcelId));
         }
     }
 
@@ -570,12 +563,12 @@ class Client
     public function getSenderAddresses(): array
     {
         try {
-            $response = $this->guzzleClient->get('user/addresses/sender');
-            $senderAddressesData = json_decode((string)$response->getBody(), true)['sender_addresses'];
+            $response = $this->httpClient->request('GET', 'user/addresses/sender');
+            $senderAddressesData = $response->toArray()['sender_addresses'];
 
             return array_map(SenderAddress::fromData(...), $senderAddressesData);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve sender addresses.');
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve sender addresses.');
         }
     }
 
@@ -588,10 +581,10 @@ class Client
     {
         try {
             $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
-            $response = $this->guzzleClient->get(sprintf('parcels/%s', $parcelId));
-            return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
-        } catch (TransferException $exception) {
-            throw Utility::parseGuzzleException($exception, 'Could not retrieve parcel.');
+            $response = $this->httpClient->request('GET', sprintf('parcels/%s', $parcelId));
+            return Parcel::fromData($response->toArray()['parcel']);
+        } catch (ExceptionInterface $exception) {
+            throw Utility::parseHttpClientException($exception, 'Could not retrieve parcel.');
         }
     }
 
@@ -613,14 +606,14 @@ class Client
     {
         try {
             $parcelId = is_int($parcel) ? $parcel : $parcel->getId();
-            $response = $this->guzzleClient->get(sprintf(
+            $response = $this->httpClient->request('GET', sprintf(
                 'parcels/%s/return_portal_url',
                 $parcelId
             ));
 
-            return (string)json_decode($response->getBody(), true)['url'];
-        } catch (RequestException $exception) {
-            if ($exception->getResponse() && $exception->getResponse()->getStatusCode() === 404) {
+            return (string)$response->toArray()['url'];
+        } catch (ExceptionInterface $exception) {
+            if ($exception instanceof HttpExceptionInterface && $exception->getResponse()->getStatusCode() === 404) {
                 return null;
             }
 
