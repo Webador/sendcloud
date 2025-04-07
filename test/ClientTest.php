@@ -9,6 +9,7 @@ use JouwWeb\Sendcloud\Model\Parcel;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\ShippingProduct;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -24,7 +25,7 @@ class ClientTest extends TestCase
             publicKey: 'handsome public key',
             secretKey: 'gorgeous secret key',
             partnerId: 'aPartnerId',
-            // See configureResponses() for an explanation why this is not a property.
+            // See configureResponses().
             httpClient: new MockHttpClient(),
         );
     }
@@ -32,7 +33,7 @@ class ClientTest extends TestCase
     public function testGetUser(): void
     {
         $response = new MockResponse('{"user":{"address":"Insulindelaan 115","city":"Eindhoven","company_logo":null,"company_name":"Sendcloud","data":[],"email":"johndoe@sendcloud.nl","invoices":[{"date":"05-06-201811:58:52","id":1,"isPayed":false,"items":"https://local.sendcloud.sc/api/v2/user/invoices/1","price_excl":77.4,"price_incl":93.65,"ref":"1","type":"periodic"}],"modules":[{"activated":true,"id":5,"name":"SendcloudClient","settings":null,"short_name":"sendcloud_client"},{"id":3,"name":"PrestashopIntegration","settings":{"url_webshop":"http://localhost/testing/prestashop","api_key":"O8ALXHMM24QULWM213CC6SGQ5VDJKC8W"},"activated":true,"short_name":"prestashop"}],"postal_code":"5642CV","registered":"2018-05-2912:52:51","telephone":"+31626262626","username":"johndoe"}}');
-        $this->configureResponses($response);
+        $this->configureApiResponse($response);
 
         $user = $this->client->getUser();
 
@@ -49,24 +50,12 @@ class ClientTest extends TestCase
 
     public function testGetShippingMethods(): void
     {
-        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
-            $this->assertEquals([
-                'GET',
-                'shipping_methods',
-                ['query' => [
-                    'sender_address' => 'all',
-                ]],
-            ], func_get_args());
-
-            return new Response(
-                200,
-                [],
-                '{"shipping_methods": [{"service_point_input": "none","min_weight": "0.001","max_weight": "1.001","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
-            );
-        });
+        $response = new MockResponse('{"shipping_methods":[{"service_point_input":"none","min_weight":"0.001","max_weight":"1.001","name":"Low weight shipment","carrier":"carrier_code","countries":[{"iso_2":"BE","iso_3":"BEL","id":1,"price":3.50,"name":"Belgium"},{"iso_2":"NL","iso_3":"NLD","id":2,"price":4.20,"name":"Netherlands"}],"min_weight":"0.001","id":1,"price":0}]}');
+        $this->configureApiResponse($response);
 
         $shippingMethods = $this->client->getShippingMethods();
 
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/shipping_methods?sender_address=all', $response->getRequestUrl());
         $this->assertCount(1, $shippingMethods);
         $this->assertEquals(1, $shippingMethods[0]->getId());
         $this->assertEquals(1, $shippingMethods[0]->getMinimumWeight());
@@ -80,49 +69,24 @@ class ClientTest extends TestCase
 
     public function testGetShippingMethodsOptionalArguments(): void
     {
-        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
-            $this->assertEquals([
-                'GET',
-                'shipping_methods',
-                ['query' => [
-                    'service_point_id' => 10,
-                    'sender_address' => 11,
-                    'is_return' => 'true',
-                ]],
-            ], func_get_args());
-
-            return new Response(
-                200,
-                [],
-                '{"shipping_methods": [{"service_point_input": "none","max_weight": "1.000","name": "Low weight shipment","carrier": "carrier_code","countries": [{"iso_2": "BE","iso_3": "BEL","id": 1,"price": 3.50,"name": "Belgium"},{"iso_2": "NL","iso_3": "NLD","id": 2,"price": 4.20,"name": "Netherlands"}],"min_weight": "0.001","id": 1,"price": 0}]}'
-            );
-        });
+        $response = new MockResponse('{"shipping_methods":[{"service_point_input":"none","max_weight":"1.000","name":"Low weight shipment","carrier":"carrier_code","countries":[{"iso_2":"BE","iso_3":"BEL","id":1,"price":3.50,"name":"Belgium"},{"iso_2":"NL","iso_3":"NLD","id":2,"price":4.20,"name":"Netherlands"}],"min_weight":"0.001","id":1,"price":0}]}');
+        $this->configureApiResponse($response);
 
         $this->client->getShippingMethods(10, 11, true);
+
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/shipping_methods?service_point_id=10&sender_address=11&is_return=true', $response->getRequestUrl());
     }
 
     public function testGetShippingProducts(): void
     {
-        $this->mockHttpClient->expects($this->once())->method('request')->willReturnCallback(function () {
-            $this->assertEquals([
-                'GET',
-                'shipping-products',
-                ['query' => [
-                    'from_country' => 'NL',
-                ]],
-            ], func_get_args());
-
-            $shippingProduct1 = '{"name": "Shipping product 1", "carrier": "carrier_code_1", "available_functionalities": {"last_mile": ["home_delivery"], "returns": [false]},"methods": [{"id": 2, "name": "B- Heavy weight shipment","properties": { "min_weight": 51, "max_weight": 1001}}, {"id": 1, "name": "A- Low weight shipment","properties": { "min_weight": 1, "max_weight": 51}}],"weight_range":{"min_weight": 1,"max_weight": 1001}}';
-            $shippingProduct2 = '{"name": "Shipping product 2", "carrier": "carrier_code_2", "available_functionalities": {"last_mile": ["service_point"], "returns": [true]},"methods": [{"id": 3, "name": "C- Heavy weight shipment","properties": { "min_weight": 1000, "max_weight": 2001}}],"weight_range":{"min_weight": 1000,"max_weight": 2001}}';
-
-            return new Response(
-                200,
-                [],
-                "[$shippingProduct1, $shippingProduct2]"
-            );
-        });
+        $shippingProduct1 = '{"name":"Shipping product 1","carrier":"carrier_code_1","available_functionalities":{"last_mile":["home_delivery"],"returns":[false]},"methods":[{"id":2,"name":"B- Heavy weight shipment","properties":{ "min_weight":51,"max_weight":1001}},{"id":1,"name":"A- Low weight shipment","properties":{ "min_weight":1,"max_weight":51}}],"weight_range":{"min_weight":1,"max_weight":1001}}';
+        $shippingProduct2 = '{"name":"Shipping product 2","carrier":"carrier_code_2","available_functionalities":{"last_mile":["service_point"],"returns":[true]},"methods":[{"id":3,"name":"C- Heavy weight shipment","properties":{ "min_weight":1000,"max_weight":2001}}],"weight_range":{"min_weight":1000,"max_weight":2001}}';
+        $response = new MockResponse(sprintf('[%s,%s]', $shippingProduct1, $shippingProduct2));
+        $this->configureApiResponse($response);
 
         $shippingProducts = $this->client->getShippingProducts(fromCountry: 'NL');
+
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/shipping-products?from_country=NL', $response->getRequestUrl());
 
         // All shipping products should be in result
         $this->assertCount(2, $shippingProducts);
@@ -326,14 +290,10 @@ class ClientTest extends TestCase
 
     public function testCreateMultiParcel(): void
     {
-        $parcel_json_1 = '{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
-        $parcel_json_2 = '{"id":8293795,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
-
-        $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
-            200,
-            [],
-            '{"parcels":['.$parcel_json_1.','.$parcel_json_2.']}'
-        ));
+        $parcel1Json = '{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
+        $parcel2Json = '{"id":8293795,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}';
+        $response = new MockResponse(sprintf('{"parcels":[%s,%s]}', $parcel1Json, $parcel2Json));
+        $this->configureApiResponse($response);
 
         $parcels = $this->client->createMultiParcel(
             new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
@@ -371,12 +331,12 @@ class ClientTest extends TestCase
 
     public function testCreateMultiParcelWithVerboseError(): void
     {
-        $parcel_json = '{"name":"Baron van der Zanden","company_name":"","address":"straat","address_2":"CA","house_number":"23","city":"Gehucht","postal_code":"9283DD","country":"NL","email":"baron@vanderzanden.nl","telephone":"Blok 3","country_state":"","order_number":"201900001","weight":"2.486","request_label":true,"shipment":{"id":1},"quantity":2}';
+        $parcelJson = '{"name":"Baron van der Zanden","company_name":"","address":"straat","address_2":"CA","house_number":"23","city":"Gehucht","postal_code":"9283DD","country":"NL","email":"baron@vanderzanden.nl","telephone":"Blok 3","country_state":"","order_number":"201900001","weight":"2.486","request_label":true,"shipment":{"id":1},"quantity":2}';
 
         $this->mockHttpClient->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"parcels": [], "failed_parcels": [{"parcel":'.$parcel_json.', "errors": { "name": ["This field is required."]}}]}'
+            '{"parcels": [], "failed_parcels": [{"parcel":'.$parcelJson.', "errors": { "name": ["This field is required."]}}]}'
         ));
 
         $parcels = $this->client->createMultiParcel(
@@ -579,37 +539,17 @@ class ClientTest extends TestCase
 
     public function testGetBulkLabelPdf(): void
     {
-        $requestNumber = 0;
-        $this->mockHttpClient->expects($this->exactly(2))->method('request')->willReturnCallback(
-            function ($method, $url, $data) use (&$requestNumber) {
-                $requestNumber++;
-
-                if ($requestNumber === 1) {
-                    $this->assertEquals(['json' => ['label' => ['parcels' => [0 => 1234, 1 => 4321]]]], $data);
-                    return new Response(
-                        200,
-                        [],
-                        '{"label":{"normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=3"],"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer?ids=1234,4321"}}'
-                    );
-                }
-
-                if ($requestNumber === 2) {
-                    $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0', $url);
-                    return new Response(
-                        200,
-                        [],
-                        'pdfdata'
-                    );
-                }
-
-                return null;
-            }
-        );
+        $response1 = new MockResponse('{"label":{"normal_printer":["https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=1","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=2","https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=3"],"label_printer":"https://panel.sendcloud.sc/api/v2/labels/label_printer?ids=1234,4321"}}');
+        $response2 = new MockResponse('pdfdata');
+        $this->configureApiResponse([$response1, $response2]);
 
         $parcelMock = $this->createMock(Parcel::class);
         $parcelMock->method('getId')->willReturn(4321);
 
         $pdf = $this->client->getBulkLabelPdf([1234, $parcelMock], Parcel::LABEL_FORMAT_A4_TOP_LEFT);
+
+        $this->assertEquals('{"label":{"parcels":[1234,4321]}}', $response1->getRequestOptions()['body']);
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer?ids=1234,4321&start_from=0', $response2->getRequestUrl());
         $this->assertEquals('pdfdata', $pdf);
     }
 
@@ -625,21 +565,22 @@ class ClientTest extends TestCase
         $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, 'invalid content type', 0);
     }
 
-    public static function contentTypesProvider(): array
-    {
-        return array_map(static fn (string $value) => [$value], Parcel::DOCUMENT_CONTENT_TYPES);
-    }
-
-    /** @dataProvider contentTypesProvider */
+    #[DataProvider('contentTypesProvider')]
     public function testGetParcelDocumentErrorsWithAnDpiPerContentType(string $contentType): void
     {
         $this->expectExceptionMessage(sprintf('DPI "0" is not accepted for "%s". Valid values: %s.', $contentType, implode(', ', Parcel::DOCUMENT_DPI_VALUES[$contentType])));
         $this->client->getParcelDocument(1, Parcel::DOCUMENT_TYPE_LABEL, $contentType, 0);
     }
 
+    public static function contentTypesProvider(): array
+    {
+        return array_map(static fn (string $value) => [$value], Parcel::DOCUMENT_CONTENT_TYPES);
+    }
+
     public function testGetParcelDocumentRethrowsTheCorrectException(): void
     {
-        $this->mockHttpClient->method('request')->willThrowException(new TransferException('Whoops'));
+        $response = new MockResponse('', ['http_code' => 400]);
+        $this->configureApiResponse($response);
 
         $this->expectException(SendcloudRequestException::class);
         $this->expectExceptionMessage(sprintf('Could not retrieve parcel document "%s" for parcel id "1".', Parcel::DOCUMENT_TYPE_LABEL));
@@ -659,11 +600,12 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Responses need to be configured on the client's property because the original mock HTTP client is cloned.
+     * Responses need to be configured directly on the client's property because the original client is cloned (via
+     * {@see HttpClientInterface::withOptions()}).
      *
      * @param MockResponse|MockResponse[] $responses
      */
-    private function configureResponses(MockResponse|array $responses): void
+    private function configureApiResponse(MockResponse|array $responses): void
     {
         $httpClientProperty = new \ReflectionProperty($this->client, 'httpClient');
         /** @var MockHttpClient $httpClient */

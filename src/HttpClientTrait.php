@@ -29,6 +29,7 @@ trait HttpClientTrait
         }
         $requestOptions->setHeaders($headers);
 
+        // TODO: Only require contracts and fall back to HttpClient when package is installed (exception otherwise)?
         return $httpClient?->withOptions($requestOptions->toArray()) ?? HttpClient::create($requestOptions->toArray());
     }
 }

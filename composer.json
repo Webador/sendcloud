@@ -44,6 +44,7 @@
         "symfony/http-client": "^6.0||^7.0"
     },
     "require-dev": {
+        "guzzlehttp/psr7": "^2.7",
         "phpunit/phpunit": "^10.0.0",
         "symfony/var-dumper": "^6.0.0"
     }
