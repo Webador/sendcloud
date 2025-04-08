@@ -26,7 +26,9 @@ class UtilityTest extends TestCase
         $this->addToAssertionCount(1);
 
         try {
-            Utility::verifyWebhookRequest($request->withBody(Utils::streamFor(substr($payload, 0, -1))), $secretKey);
+            /** @var Request $invalidRequest */
+            $invalidRequest = $request->withBody(Utils::streamFor(substr($payload, 0, -1)));
+            Utility::verifyWebhookRequest($invalidRequest, $secretKey);
             $this->fail('Invalid request was validated correctly.');
         } catch (SendcloudWebhookException $exception) {
             $this->assertEquals(SendcloudWebhookException::CODE_VERIFICATION_FAILED, $exception->getCode());
