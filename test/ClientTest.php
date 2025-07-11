@@ -356,6 +356,31 @@ class ClientTest extends TestCase
         $this->assertEquals(117, $parcel->getShippingMethodId());
     }
 
+    public function testCreateLabelWithVerboseError(): void
+    {
+        $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
+            200,
+            [],
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":1002,"message":"Announcement failed"},"to_service_point":null,"telephone":"","carrier":{"code":"mondial_relay"},"tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipment":{"id":28037,"name":"Mondial Relay Point Relais L 0.5-1kg"},"external_order_id":"8293794","external_shipment_id":"201900001", "errors" : {"address_add2": "String should have at most 30 characters"}}}'
+        ));
+
+        $parcel = $this->client->createLabel(
+            8293794,
+            28037,
+            61361,
+            Parcel::ERROR_VERBOSE
+        );
+
+        $this->assertEquals(Parcel::STATUS_ANNOUNCEMENT_FAILED, $parcel->getStatusId());
+        $this->assertEquals(['address_add2' => ["String should have at most 30 characters"]], $parcel->getErrors());
+        $this->assertFalse($parcel->hasLabel());
+        $this->assertEquals('', $parcel->getTrackingNumber());
+        $this->assertEquals('', $parcel->getTrackingUrl());
+        $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
+        $this->assertEquals('mondial_relay', $parcel->getCarrier());
+        $this->assertEquals(28037, $parcel->getShippingMethodId());
+    }
+
     public function testGetParcel(): void
     {
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(

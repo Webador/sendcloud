@@ -312,9 +312,16 @@ class Client
      * Address will disable branding personalizations.
      * @param bool $applyShippingRules shipping rules can override the given shippingMethod and can be configured in the
      * sendcloud control panel
+     * @param string|null $errors One of {@see Parcel::ERRORS_VERBOSE}.
      * @throws SendcloudRequestException
      */
-    public function createLabel(Parcel|int $parcel, ShippingMethod|int $shippingMethod, SenderAddress|Address|int|null $senderAddress, bool $applyShippingRules = false): Parcel
+    public function createLabel(
+        Parcel|int $parcel,
+        ShippingMethod|int $shippingMethod,
+        SenderAddress|Address|int|null $senderAddress,
+        bool $applyShippingRules = false,
+        ?string $errors = null
+    ): Parcel
     {
         $parcelData = $this->createParcelData(
             parcelId: is_int($parcel) ? $parcel : $parcel->getId(),
@@ -325,11 +332,17 @@ class Client
         );
 
         try {
-            $response = $this->guzzleClient->put('parcels', [
+            $requestOptions = [
                 RequestOptions::JSON => [
                     'parcel' => $parcelData,
                 ],
-            ]);
+            ];
+
+            if (isset($errors)){
+                $requestOptions[RequestOptions::QUERY] = ['errors' => $errors];
+            }
+
+            $response = $this->guzzleClient->put('parcels', $requestOptions);
 
             return Parcel::fromData(json_decode((string)$response->getBody(), true)['parcel']);
         } catch (TransferException $exception) {
