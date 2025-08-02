@@ -12,6 +12,7 @@ use JouwWeb\Sendcloud\Exception\SendcloudStateException;
 use JouwWeb\Sendcloud\Exception\SendcloudWebhookException;
 use JouwWeb\Sendcloud\Model\Address;
 use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelDimensions;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\SenderAddress;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
@@ -246,6 +247,7 @@ class Client
         ?string $shippingMethodCheckoutName = null,
         ?string $totalOrderValue = null,
         ?string $totalOrderValueCurrency = null,
+        ?ParcelDimensions $dimensions = null,
     ): Parcel {
         $parcelData = $this->createParcelData(
             shippingAddress: $shippingAddress,
@@ -260,6 +262,7 @@ class Client
             shippingMethodCheckoutName: $shippingMethodCheckoutName,
             totalOrderValue: $totalOrderValue,
             totalOrderValueCurrency: $totalOrderValueCurrency,
+            dimensions: $dimensions,
         );
 
         try {
@@ -308,7 +311,8 @@ class Client
         ?string $postNumber = null,
         ?ShippingMethod $shippingMethod = null,
         ?string $errors = null,
-        int $quantity = 1
+        int $quantity = 1,
+        ?ParcelDimensions $dimensions = null,
     ): array {
         $parcelData = $this->createParcelData(
             shippingAddress: $shippingAddress,
@@ -321,6 +325,7 @@ class Client
             customsShipmentType: $customsShipmentType,
             items: $items,
             postNumber: $postNumber,
+            dimensions: $dimensions,
         );
         $parcelData['quantity'] = $quantity;
 
@@ -663,6 +668,7 @@ class Client
         ?string $shippingMethodCheckoutName = null,
         ?string $totalOrderValue = null,
         ?string $totalOrderValueCurrency = null,
+        ?ParcelDimensions $dimensions = null,
     ): array {
         $parcelData = [];
 
@@ -700,6 +706,13 @@ class Client
 
         if ($weight) {
             $parcelData['weight'] = number_format($weight / 1000, 3);
+        }
+
+        if ($dimensions) {
+            // Note that the maximum of 2 decimal places is enforced by the API.
+            $parcelData['length'] = number_format($dimensions->length, 2);
+            $parcelData['width'] = number_format($dimensions->width, 2);
+            $parcelData['height'] = number_format($dimensions->height, 2);
         }
 
         if ($customsInvoiceNumber) {
