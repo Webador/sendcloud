@@ -16,7 +16,10 @@ use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\WebhookEvent;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 
-$client = new Client('your_public_key', 'your_secret_key');
+$client = new Client(
+    publicKey: 'your_public_key',
+    secretKey: 'your_secret_key',
+);
 
 // Print prices for all enabled shipping methods that ship to the Netherlands
 foreach ($client->getShippingMethods() as $shippingMethod) {

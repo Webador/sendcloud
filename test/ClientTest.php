@@ -11,6 +11,7 @@ use JouwWeb\Sendcloud\Client;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Model\Address;
 use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelDimensions;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\ShippingProduct;
@@ -56,14 +57,14 @@ class ClientTest extends TestCase
 
         $user = $this->client->getUser();
 
-        $this->assertEquals('johndoe', $user->getUsername());
-        $this->assertEquals('Sendcloud', $user->getCompanyName());
-        $this->assertEquals('+31626262626', $user->getPhoneNumber());
-        $this->assertEquals('Insulindelaan 115', $user->getAddress());
-        $this->assertEquals('Eindhoven', $user->getCity());
-        $this->assertEquals('5642CV', $user->getPostalCode());
-        $this->assertEquals('johndoe@sendcloud.nl', $user->getEmailAddress());
-        $this->assertEquals(new \DateTimeImmutable('2018-05-29 12:52:51'), $user->getRegistered());
+        $this->assertEquals('johndoe', $user->username);
+        $this->assertEquals('Sendcloud', $user->companyName);
+        $this->assertEquals('+31626262626', $user->phoneNumber);
+        $this->assertEquals('Insulindelaan 115', $user->address);
+        $this->assertEquals('Eindhoven', $user->city);
+        $this->assertEquals('5642CV', $user->postalCode);
+        $this->assertEquals('johndoe@sendcloud.nl', $user->emailAddress);
+        $this->assertEquals(new \DateTimeImmutable('2018-05-29 12:52:51'), $user->registered);
     }
 
     public function testGetShippingMethods(): void
@@ -87,14 +88,14 @@ class ClientTest extends TestCase
         $shippingMethods = $this->client->getShippingMethods();
 
         $this->assertCount(1, $shippingMethods);
-        $this->assertEquals(1, $shippingMethods[0]->getId());
-        $this->assertEquals(1, $shippingMethods[0]->getMinimumWeight());
-        $this->assertEquals(1001, $shippingMethods[0]->getMaximumWeight());
-        $this->assertEquals('carrier_code', $shippingMethods[0]->getCarrier());
-        $this->assertEquals(['BE' => 350, 'NL' => 420], $shippingMethods[0]->getPrices());
-        $this->assertEquals(420, $shippingMethods[0]->getPriceForCountry('NL'));
-        $this->assertNull($shippingMethods[0]->getPriceForCountry('EN'));
-        $this->assertFalse($shippingMethods[0]->getAllowsServicePoints());
+        $this->assertEquals(1, $shippingMethods[0]->id);
+        $this->assertEquals(1, $shippingMethods[0]->minimumWeight);
+        $this->assertEquals(1001, $shippingMethods[0]->maximumWeight);
+        $this->assertEquals('carrier_code', $shippingMethods[0]->carrier);
+        $this->assertEquals(['BE' => 350, 'NL' => 420], $shippingMethods[0]->prices);
+        $this->assertEquals(420, $shippingMethods[0]->prices['NL']);
+        $this->assertArrayNotHasKey('EN', $shippingMethods[0]->prices);
+        $this->assertFalse($shippingMethods[0]->allowsServicePoints);
     }
 
     public function testGetShippingMethodsOptionalArguments(): void
@@ -147,26 +148,26 @@ class ClientTest extends TestCase
         $this->assertCount(2, $shippingProducts);
 
         // All shipping methods should be in result, inside the different shipping products
-        $this->assertCount(2, $shippingProducts[0]->getMethods());
-        $this->assertCount(1, $shippingProducts[1]->getMethods());
+        $this->assertCount(2, $shippingProducts[0]->methods);
+        $this->assertCount(1, $shippingProducts[1]->methods);
 
-        $this->assertEquals(['Shipping product 1', 'Shipping product 2'], array_map(fn ($product) => $product->getName(), $shippingProducts));
+        $this->assertEquals(['Shipping product 1', 'Shipping product 2'], array_map(fn ($product) => $product->name, $shippingProducts));
 
-        $this->assertEquals(1, $shippingProducts[0]->getMinimumWeight());
-        $this->assertEquals(1001, $shippingProducts[0]->getMaximumWeight());
-        $this->assertEquals('carrier_code_1', $shippingProducts[0]->getCarrier());
-        $this->assertEquals(false, $shippingProducts[0]->getWithReturn());
-        $this->assertEquals(true, $shippingProducts[1]->getWithReturn());
+        $this->assertEquals(1, $shippingProducts[0]->minimumWeight);
+        $this->assertEquals(1001, $shippingProducts[0]->maximumWeight);
+        $this->assertEquals('carrier_code_1', $shippingProducts[0]->carrier);
+        $this->assertFalse($shippingProducts[0]->withReturn);
+        $this->assertTrue($shippingProducts[1]->withReturn);
 
         // Shipping methods order should be ascending by their name
-        $this->assertEquals(['A- Low weight shipment', 'B- Heavy weight shipment'], array_map(fn ($product) => $product->getName(), $shippingProducts[0]->getMethods()));
+        $this->assertEquals(['A- Low weight shipment', 'B- Heavy weight shipment'], array_map(fn ($product) => $product->name, $shippingProducts[0]->methods));
 
-        $this->assertFalse($shippingProducts[0]->getAllowServicePoints());
-        $this->assertTrue($shippingProducts[1]->getAllowServicePoints());
+        $this->assertFalse($shippingProducts[0]->allowsServicePoints);
+        $this->assertTrue($shippingProducts[1]->allowsServicePoints);
 
         // Prices should be empty
-        $this->assertEquals([], $shippingProducts[0]->getMethods()[0]->getPrices());
-        $this->assertNull($shippingProducts[0]->getMethods()[0]->getPriceForCountry('EN'));
+        $this->assertEquals([], $shippingProducts[0]->methods[0]->prices);
+        $this->assertArrayNotHasKey('EN', $shippingProducts[0]->methods[0]->prices);
     }
 
     public function testGetShippingProductsCaseAllOptionalArguments(): void
@@ -273,9 +274,9 @@ class ClientTest extends TestCase
         $senderAddresses = $this->client->getSenderAddresses();
 
         $this->assertCount(2, $senderAddresses);
-        $this->assertEquals(92837, $senderAddresses[0]->getId());
-        $this->assertEquals('AwesomeCo Inc.', $senderAddresses[0]->getCompanyName());
-        $this->assertEquals('', $senderAddresses[1]->getContactName());
+        $this->assertEquals(92837, $senderAddresses[0]->id);
+        $this->assertEquals('AwesomeCo Inc.', $senderAddresses[0]->companyName);
+        $this->assertEquals('', $senderAddresses[1]->contactName);
     }
 
     public function testCreateParcel(): void
@@ -283,28 +284,35 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001","length":12.34,"width":23.46,"height":34.0}}'
         ));
 
         $parcel = $this->client->createParcel(
-            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
-            null,
-            '201900001',
-            2486
+            shippingAddress: new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            orderNumber: '201900001',
+            weight: 2486,
+            dimensions: new ParcelDimensions(
+                length: 12.34,
+                width: 23.456,
+                height: 34.0,
+            ),
         );
 
-        $this->assertEquals(8293794, $parcel->getId());
-        $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->getStatusId());
-        $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
-        $this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
-        $this->assertEquals('', $parcel->getAddress()->getCompanyName());
+        $this->assertEquals(8293794, $parcel->id);
+        $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->statusId);
+        $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->created);
+        $this->assertEquals('Baron van der Zanden', $parcel->address->name);
+        $this->assertEquals('', $parcel->address->companyName);
         $this->assertFalse($parcel->hasLabel());
         $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
-        $this->assertEquals(2486, $parcel->getWeight());
-        $this->assertEquals('201900001', $parcel->getOrderNumber());
-        $this->assertNull($parcel->getShippingMethodId());
-        $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
-        $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
+        $this->assertEquals(2486, $parcel->weight);
+        $this->assertEquals('201900001', $parcel->orderNumber);
+        $this->assertNull($parcel->shippingMethodId);
+        $this->assertEquals('Blok 3', $parcel->address->addressLine2);
+        $this->assertEquals('CA', $parcel->address->countryStateCode);
+        $this->assertEquals(12.34, $parcel->dimensions->length);
+        $this->assertEquals(23.46, $parcel->dimensions->width);
+        $this->assertEquals(34.0, $parcel->dimensions->height);
     }
 
     public function testCreateParcelWithVerboseError(): void
@@ -328,19 +336,19 @@ class ClientTest extends TestCase
             Parcel::ERROR_VERBOSE
         );
 
-        $this->assertEquals(8293794, $parcel->getId());
-        $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->getStatusId());
-        $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
-        //$this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
-        $this->assertEquals('', $parcel->getAddress()->getCompanyName());
+        $this->assertEquals(8293794, $parcel->id);
+        $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->statusId);
+        $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->created);
+        //$this->assertEquals('Baron van der Zanden', $parcel->address->name);
+        $this->assertEquals('', $parcel->address->companyName);
         $this->assertFalse($parcel->hasLabel());
         $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
-        $this->assertEquals(2486, $parcel->getWeight());
-        $this->assertEquals('201900001', $parcel->getOrderNumber());
-        $this->assertNull($parcel->getShippingMethodId());
-        $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
-        $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
-        $this->assertEquals(['name' => ["This field is required."]], $parcel->getErrors());
+        $this->assertEquals(2486, $parcel->weight);
+        $this->assertEquals('201900001', $parcel->orderNumber);
+        $this->assertNull($parcel->shippingMethodId);
+        $this->assertEquals('Blok 3', $parcel->address->addressLine2);
+        $this->assertEquals('CA', $parcel->address->countryStateCode);
+        $this->assertEquals(['name' => ["This field is required."]], $parcel->errors);
     }
 
     public function testCreateMultiParcel(): void
@@ -373,18 +381,18 @@ class ClientTest extends TestCase
         foreach ($parcels as $key => $parcel) {
             $id = $key == 0 ? 8293794 : 8293795;
 
-            $this->assertEquals($id, $parcel->getId());
-            $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->getStatusId());
-            $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->getCreated());
-            $this->assertEquals('Baron van der Zanden', $parcel->getAddress()->getName());
-            $this->assertEquals('', $parcel->getAddress()->getCompanyName());
+            $this->assertEquals($id, $parcel->id);
+            $this->assertEquals(Parcel::STATUS_NO_LABEL, $parcel->statusId);
+            $this->assertEquals(new \DateTimeImmutable('2019-03-11 14:35:10'), $parcel->created);
+            $this->assertEquals('Baron van der Zanden', $parcel->address->name);
+            $this->assertEquals('', $parcel->address->companyName);
             $this->assertFalse($parcel->hasLabel());
             $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_LEFT));
-            $this->assertEquals(2486, $parcel->getWeight());
-            $this->assertEquals('201900001', $parcel->getOrderNumber());
-            $this->assertNull($parcel->getShippingMethodId());
-            $this->assertEquals('Blok 3', $parcel->getAddress()->getAddressLine2());
-            $this->assertEquals('CA', $parcel->getAddress()->getCountryStateCode());
+            $this->assertEquals(2486, $parcel->weight);
+            $this->assertEquals('201900001', $parcel->orderNumber);
+            $this->assertNull($parcel->shippingMethodId);
+            $this->assertEquals('Blok 3', $parcel->address->addressLine2);
+            $this->assertEquals('CA', $parcel->address->countryStateCode);
         }
     }
 
@@ -441,9 +449,9 @@ class ClientTest extends TestCase
             ]
         );
 
-        $this->assertEquals('customsInvoiceNumber', $parcel->getCustomsInvoiceNumber());
-        $this->assertEquals(Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS, $parcel->getCustomsShipmentType());
-        $this->assertCount(2, $parcel->getItems());
+        $this->assertEquals('customsInvoiceNumber', $parcel->customsInvoiceNumber);
+        $this->assertEquals(Parcel::CUSTOMS_SHIPMENT_TYPE_COMMERCIAL_GOODS, $parcel->customsShipmentType);
+        $this->assertCount(2, $parcel->items);
         $this->assertEquals([
             'description' => 'green tea',
             'quantity' => 1,
@@ -456,7 +464,7 @@ class ClientTest extends TestCase
             'properties' => [
                 'propertyKey' => 'propertyValue',
             ],
-        ], $parcel->getItems()[1]->toArray());
+        ], $parcel->items[1]->toArray());
     }
 
     public function testUpdateParcel(): void
@@ -479,7 +487,7 @@ class ClientTest extends TestCase
 
         $parcel = $this->client->updateParcel(8293794, new Address('Completely different person', 'Some company', 'Rosebud', 'Almanda', '9238DD', 'NL', 'completelydifferent@email.com', '2134A', '+31699999999', 'Above the skies', 'CS'));
 
-        $this->assertEquals('Some company', $parcel->getAddress()->getCompanyName());
+        $this->assertEquals('Some company', $parcel->address->companyName);
     }
 
     public function testCreateLabel(): void
@@ -492,14 +500,14 @@ class ClientTest extends TestCase
 
         $parcel = $this->client->createLabel(8293794, 117, 61361);
 
-        $this->assertEquals(Parcel::STATUS_READY_TO_SEND, $parcel->getStatusId());
-        $this->assertEquals('JVGL4004421100020097', $parcel->getTrackingNumber());
-        $this->assertEquals('https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd', $parcel->getTrackingUrl());
+        $this->assertEquals(Parcel::STATUS_READY_TO_SEND, $parcel->statusId);
+        $this->assertEquals('JVGL4004421100020097', $parcel->trackingNumber);
+        $this->assertEquals('https://jouwweb.shipping-portal.com/tracking/?country=nl&tracking_number=jvgl4004421100020097&postal_code=9238dd', $parcel->trackingUrl);
         $this->assertTrue($parcel->hasLabel());
         $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/label_printer/8293794', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
-        $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3', $parcel->getLabelUrl(Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT));
-        $this->assertEquals('dhl', $parcel->getCarrier());
-        $this->assertEquals(117, $parcel->getShippingMethodId());
+        $this->assertEquals('https://panel.sendcloud.sc/api/v2/labels/normal_printer/8293794?start_from=3', $parcel->labelUrls[Parcel::LABEL_FORMAT_A4_BOTTOM_RIGHT]);
+        $this->assertEquals('dhl', $parcel->carrier);
+        $this->assertEquals(117, $parcel->shippingMethodId);
     }
 
     public function testCreateLabelWithVerboseError(): void
@@ -517,14 +525,14 @@ class ClientTest extends TestCase
             Parcel::ERROR_VERBOSE
         );
 
-        $this->assertEquals(Parcel::STATUS_ANNOUNCEMENT_FAILED, $parcel->getStatusId());
-        $this->assertEquals(['address_add2' => ["String should have at most 30 characters"]], $parcel->getErrors());
+        $this->assertEquals(Parcel::STATUS_ANNOUNCEMENT_FAILED, $parcel->statusId);
+        $this->assertEquals(['address_add2' => ["String should have at most 30 characters"]], $parcel->errors);
         $this->assertFalse($parcel->hasLabel());
-        $this->assertEquals('', $parcel->getTrackingNumber());
-        $this->assertEquals('', $parcel->getTrackingUrl());
+        $this->assertEquals('', $parcel->trackingNumber);
+        $this->assertEquals('', $parcel->trackingUrl);
         $this->assertNull($parcel->getLabelUrl(Parcel::LABEL_FORMAT_A6));
-        $this->assertEquals('mondial_relay', $parcel->getCarrier());
-        $this->assertEquals(28037, $parcel->getShippingMethodId());
+        $this->assertEquals('mondial_relay', $parcel->carrier);
+        $this->assertEquals(28037, $parcel->shippingMethodId);
     }
 
     public function testGetParcel(): void
@@ -537,8 +545,8 @@ class ClientTest extends TestCase
 
         $parcel = $this->client->getParcel(2784972);
 
-        $this->assertEquals(2784972, $parcel->getId());
-        $this->assertEquals(Parcel::STATUS_DELIVERED, $parcel->getStatusId());
+        $this->assertEquals(2784972, $parcel->id);
+        $this->assertEquals(Parcel::STATUS_DELIVERED, $parcel->statusId);
     }
 
     public function testCancelParcel(): void
@@ -650,10 +658,17 @@ class ClientTest extends TestCase
             }
         );
 
-        $parcelMock = $this->createMock(Parcel::class);
-        $parcelMock->method('getId')->willReturn(4321);
+        $parcel = new Parcel(
+            id: 4321,
+            statusId: Parcel::STATUS_NO_LABEL,
+            statusMessage: 'No label',
+            created: new \DateTimeImmutable('2025-08-02'),
+            trackingNumber: '5',
+            weight: 2500,
+            address: $this->createMock(Address::class),
+        );
 
-        $pdf = $this->client->getBulkLabelPdf([1234, $parcelMock], Parcel::LABEL_FORMAT_A4_TOP_LEFT);
+        $pdf = $this->client->getBulkLabelPdf([1234, $parcel], Parcel::LABEL_FORMAT_A4_TOP_LEFT);
         $this->assertEquals('pdfdata', $pdf);
     }
 
@@ -671,8 +686,8 @@ class ClientTest extends TestCase
         $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL');
 
         $this->assertCount(2, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getId());
-        $this->assertEquals(2, $servicePoints[1]->getId());
+        $this->assertEquals(1, $servicePoints[0]->id);
+        $this->assertEquals(2, $servicePoints[1]->id);
     }
 
     public function testSearchServicePointWithDistance(): void
@@ -688,8 +703,8 @@ class ClientTest extends TestCase
         $servicePoints = $this->servicePointsClient->searchServicePoints(country: 'NL', latitude: 0, longitude: 0);
 
         $this->assertCount(1, $servicePoints);
-        $this->assertEquals(1, $servicePoints[0]->getId());
-        $this->assertNotNull($servicePoints[0]->getDistance());
+        $this->assertEquals(1, $servicePoints[0]->id);
+        $this->assertNotNull($servicePoints[0]->distance);
     }
 
     public function testGetServicePoint(): void
@@ -733,27 +748,27 @@ class ClientTest extends TestCase
 
         $servicePoint = $this->servicePointsClient->getServicePoint(26);
 
-        $this->assertEquals(26, $servicePoint->getId());
-        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->getCode());
-        $this->assertTrue($servicePoint->isActive());
-        $this->assertNull($servicePoint->getShopType());
-        $this->assertEquals($extraData, $servicePoint->getExtraData());
-        $this->assertEquals('DUMMY-3f1d6384391f45ce', $servicePoint->getName());
-        $this->assertEquals('Sesamstraat', $servicePoint->getStreet());
-        $this->assertEquals('40', $servicePoint->getHouseNumber());
-        $this->assertEquals('5699YE', $servicePoint->getPostalCode());
-        $this->assertEquals('Eindhoven', $servicePoint->getCity());
-        $this->assertEquals('51.440400', $servicePoint->getLatitude());
-        $this->assertEquals('5.475800', $servicePoint->getLongitude());
-        $this->assertEquals('devnull@sendcloud.nl', $servicePoint->getEmail());
-        $this->assertEquals('+31401234567', $servicePoint->getPhone());
-        $this->assertEquals('https://www.sendcloud.nl', $servicePoint->getHomepage());
-        $this->assertEquals('postnl', $servicePoint->getCarrier());
-        $this->assertEquals('NL', $servicePoint->getCountry());
-        $this->assertEquals($formattedOpeningTimes, $servicePoint->getFormattedOpeningTimes());
-        $this->assertTrue($servicePoint->isOpenTomorrow());
-        $this->assertTrue($servicePoint->isOpenUpcomingWeek());
-        $this->assertEquals(361, $servicePoint->getDistance());
+        $this->assertEquals(26, $servicePoint->id);
+        $this->assertEquals('4c8181feec8f49fdbe67d9c9f6aaaf6f', $servicePoint->code);
+        $this->assertTrue($servicePoint->isActive);
+        $this->assertNull($servicePoint->shopType);
+        $this->assertEquals($extraData, $servicePoint->extraData);
+        $this->assertEquals('DUMMY-3f1d6384391f45ce', $servicePoint->name);
+        $this->assertEquals('Sesamstraat', $servicePoint->street);
+        $this->assertEquals('40', $servicePoint->houseNumber);
+        $this->assertEquals('5699YE', $servicePoint->postalCode);
+        $this->assertEquals('Eindhoven', $servicePoint->city);
+        $this->assertEquals('51.440400', $servicePoint->latitude);
+        $this->assertEquals('5.475800', $servicePoint->longitude);
+        $this->assertEquals('devnull@sendcloud.nl', $servicePoint->email);
+        $this->assertEquals('+31401234567', $servicePoint->phone);
+        $this->assertEquals('https://www.sendcloud.nl', $servicePoint->homepage);
+        $this->assertEquals('postnl', $servicePoint->carrier);
+        $this->assertEquals('NL', $servicePoint->country);
+        $this->assertEquals($formattedOpeningTimes, $servicePoint->formattedOpeningTimes);
+        $this->assertTrue($servicePoint->openTomorrow);
+        $this->assertTrue($servicePoint->openUpcomingWeek);
+        $this->assertEquals(361, $servicePoint->distance);
     }
 
     public function testGetParcelDocumentErrorsWithAnInvalidDocumentType(): void

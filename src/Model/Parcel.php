@@ -159,72 +159,93 @@ class Parcel
         }
 
         return new self(
-            (int)$data['id'],
-            (int)$data['status']['id'],
-            (string)$data['status']['message'],
-            new \DateTimeImmutable((string)$data['date_created']),
-            (string)$data['tracking_number'],
-            (int)round(((float)$data['weight']) * 1000),
-            Address::fromParcelData($data),
-            count($labelUrls) > 0 ? $labelUrls : null,
-            isset($data['tracking_url']) ?  (string)$data['tracking_url'] : null,
-            isset($data['carrier']['code']) ? (string)$data['carrier']['code'] : null,
-            isset($data['order_number']) ? (string)$data['order_number']: null,
-            isset($data['shipment']['id']) ? (int)$data['shipment']['id'] : null,
-            isset($data['to_service_point']) ? (int)$data['to_service_point'] : null,
-            isset($data['customs_invoice_nr']) ? (string)$data['customs_invoice_nr'] : null,
-            isset($data['customs_shipment_type']) ? (int)$data['customs_shipment_type'] : null,
-            $items,
-            $errors,
+            id: (int)$data['id'],
+            statusId: (int)$data['status']['id'],
+            statusMessage: (string)$data['status']['message'],
+            created: new \DateTimeImmutable((string)$data['date_created']),
+            trackingNumber: (string)$data['tracking_number'],
+            weight: (int)round(((float)$data['weight']) * 1000),
+            address: Address::fromParcelData($data),
+            labelUrls: count($labelUrls) > 0 ? $labelUrls : null,
+            trackingUrl: isset($data['tracking_url']) ?  (string)$data['tracking_url'] : null,
+            carrier: isset($data['carrier']['code']) ? (string)$data['carrier']['code'] : null,
+            orderNumber: isset($data['order_number']) ? (string)$data['order_number']: null,
+            shippingMethodId: isset($data['shipment']['id']) ? (int)$data['shipment']['id'] : null,
+            servicePointId: isset($data['to_service_point']) ? (int)$data['to_service_point'] : null,
+            customsInvoiceNumber: isset($data['customs_invoice_nr']) ? (string)$data['customs_invoice_nr'] : null,
+            customsShipmentType: isset($data['customs_shipment_type']) ? (int)$data['customs_shipment_type'] : null,
+            items: $items,
+            errors: $errors,
+            dimensions: isset($data['length'], $data['width'], $data['height']) ? new ParcelDimensions(
+                length: (float)$data['length'],
+                width: (float)$data['width'],
+                height: (float)$data['height'],
+            ) : null,
         );
     }
 
     /**
-     * @param string[]|null $labelUrls
+     * @param array<value-of<self::FORMATS>, string>|null $labelUrls
      * @param ParcelItem[] $items
      * @param array<string, string> $errors
      */
     public function __construct(
-        protected int $id,
-        protected int $statusId,
-        protected string $statusMessage,
-        protected \DateTimeImmutable $created,
-        protected string $trackingNumber,
-        protected int $weight,
-        protected Address $address,
-        protected ?array $labelUrls = null,
-        protected ?string $trackingUrl = null,
-        protected ?string $carrier = null,
-        protected ?string $orderNumber = null,
-        protected ?int $shippingMethodId = null,
-        protected ?int $servicePointId = null,
-        protected ?string $customsInvoiceNumber = null,
-        protected ?int $customsShipmentType = null,
-        protected array $items = [],
-        protected array $errors = [],
+        public readonly int $id,
+        public readonly int $statusId,
+        public readonly string $statusMessage,
+        public readonly \DateTimeImmutable $created,
+        public readonly string $trackingNumber,
+        public readonly int $weight,
+        public readonly Address $address,
+        public readonly ?array $labelUrls = null,
+        public readonly ?string $trackingUrl = null,
+        public readonly ?string $carrier = null,
+        public readonly ?string $orderNumber = null,
+        public readonly ?int $shippingMethodId = null,
+        public readonly ?int $servicePointId = null,
+        public readonly ?string $customsInvoiceNumber = null,
+        public readonly ?int $customsShipmentType = null,
+        public readonly array $items = [],
+        public readonly array $errors = [],
+        public readonly ?ParcelDimensions $dimensions = null,
     ) {
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCreated(): \DateTimeImmutable
     {
         return $this->created;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getTrackingNumber(): string
     {
         return $this->trackingNumber;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getStatusMessage(): string
     {
         return $this->statusMessage;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getStatusId(): int
     {
         return $this->statusId;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getId(): int
     {
         return $this->id;
@@ -240,46 +261,73 @@ class Parcel
         return $this->labelUrls[$format] ?? null;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getTrackingUrl(): ?string
     {
         return $this->trackingUrl;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getAddress(): Address
     {
         return $this->address;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getWeight(): int
     {
         return $this->weight;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCarrier(): ?string
     {
         return $this->carrier;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getOrderNumber(): ?string
     {
         return $this->orderNumber;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getShippingMethodId(): ?int
     {
         return $this->shippingMethodId;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getServicePointId(): ?int
     {
         return $this->servicePointId;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCustomsInvoiceNumber(): ?string
     {
         return $this->customsInvoiceNumber;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCustomsShipmentType(): ?int
     {
         return $this->customsShipmentType;
@@ -287,6 +335,7 @@ class Parcel
 
     /**
      * @return ParcelItem[]
+     * @deprecated Use property.
      */
     public function getItems(): array
     {
@@ -295,6 +344,7 @@ class Parcel
 
     /**
      * @return array<string, string>
+     * @deprecated Use property.
      */
     public function getErrors(): array
     {
@@ -304,37 +354,37 @@ class Parcel
     public function toArray(): array
     {
         return [
-            'address' => $this->getAddress()->toArray(),
-            'carrier' => $this->getCarrier(),
-            'created' => $this->getCreated()->format(\DateTimeInterface::ATOM),
-            'id' => $this->getId(),
-            'labels' => array_map(function (int $format): ?string {
-                return $this->getLabelUrl($format);
-            }, self::LABEL_FORMATS),
-            'orderNumber' => $this->getOrderNumber(),
-            'servicePointId' => $this->getServicePointId(),
-            'shippingMethodId' => $this->getShippingMethodId(),
-            'statusId' => $this->getStatusId(),
-            'statusMessage' => $this->getStatusMessage(),
-            'trackingNumber' => $this->getTrackingNumber(),
-            'trackingUrl' => $this->getTrackingUrl(),
-            'weight' => $this->getWeight(),
-            'customsInvoiceNumber' => $this->getCustomsInvoiceNumber(),
-            'customsShipmentType' => $this->getCustomsShipmentType(),
-            'items' => array_map(function (ParcelItem $item): array {
-                return $item->toArray();
-            }, $this->getItems()),
+            'address' => $this->address->toArray(),
+            'carrier' => $this->carrier,
+            'created' => $this->created->format(\DateTimeInterface::ATOM),
+            'id' => $this->id,
+            'labels' => array_map(fn (int $format): ?string => (
+                $this->labelUrls[$format] ?? null
+            ), self::LABEL_FORMATS),
+            'orderNumber' => $this->orderNumber,
+            'servicePointId' => $this->servicePointId,
+            'shippingMethodId' => $this->shippingMethodId,
+            'statusId' => $this->statusId,
+            'statusMessage' => $this->statusMessage,
+            'trackingNumber' => $this->trackingNumber,
+            'trackingUrl' => $this->trackingUrl,
+            'weight' => $this->weight,
+            'customsInvoiceNumber' => $this->customsInvoiceNumber,
+            'customsShipmentType' => $this->customsShipmentType,
+            'items' => array_map(fn (ParcelItem $item): array => (
+                $item->toArray()
+            ), $this->items),
         ];
     }
 
     public function __toString(): string
     {
-        if ($this->getOrderNumber()) {
-            $suffix = sprintf('for order %s', $this->getOrderNumber());
+        if ($this->orderNumber) {
+            $suffix = sprintf('for order %s', $this->orderNumber);
         } else {
-            $suffix = sprintf('for %s', $this->getAddress());
+            $suffix = sprintf('for %s', $this->address);
         }
 
-        return sprintf('parcel %s %s', $this->getId(), $suffix);
+        return sprintf('parcel %s %s', $this->id, $suffix);
     }
 }

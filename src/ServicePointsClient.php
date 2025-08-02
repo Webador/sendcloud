@@ -160,7 +160,7 @@ class ServicePointsClient
      */
     public function getServicePoint(ServicePoint|int $servicePoint): ServicePoint
     {
-        $servicePointId = $servicePoint instanceof ServicePoint ? $servicePoint->getId() : $servicePoint;
+        $servicePointId = $servicePoint instanceof ServicePoint ? $servicePoint->id : $servicePoint;
 
         try {
             $response = $this->guzzleClient->get('service-points/' . $servicePointId);
