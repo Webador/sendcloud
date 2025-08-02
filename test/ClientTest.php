@@ -11,6 +11,7 @@ use JouwWeb\Sendcloud\Client;
 use JouwWeb\Sendcloud\Exception\SendcloudRequestException;
 use JouwWeb\Sendcloud\Model\Address;
 use JouwWeb\Sendcloud\Model\Parcel;
+use JouwWeb\Sendcloud\Model\ParcelDimensions;
 use JouwWeb\Sendcloud\Model\ParcelItem;
 use JouwWeb\Sendcloud\Model\ShippingMethod;
 use JouwWeb\Sendcloud\Model\ShippingProduct;
@@ -283,14 +284,18 @@ class ClientTest extends TestCase
         $this->guzzleClientMock->expects($this->once())->method('request')->willReturn(new Response(
             200,
             [],
-            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001"}}'
+            '{"parcel":{"id":8293794,"address":"straat 23","address_2":"Blok 3","address_divided":{"house_number":"23","street":"straat"},"city":"Gehucht","company_name":"","country":{"iso_2":"NL","iso_3":"NLD","name":"Netherlands"},"data":{},"date_created":"11-03-2019 14:35:10","email":"baron@vanderzanden.nl","name":"Baron van der Zanden","postal_code":"9283DD","reference":"0","shipment":null,"status":{"id":999,"message":"No label"},"to_service_point":null,"telephone":"","tracking_number":"","weight":"2.486","label":{},"customs_declaration":{},"order_number":"201900001","insured_value":0,"total_insured_value":0,"to_state":"CA","customs_invoice_nr":"","customs_shipment_type":null,"parcel_items":[],"type":null,"shipment_uuid":"7ade61ad-c21a-4beb-b7fd-2f579feacdb6","shipping_method":null,"external_order_id":"8293794","external_shipment_id":"201900001","length":12.34,"width":23.46,"height":34.0}}'
         ));
 
         $parcel = $this->client->createParcel(
-            new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
-            null,
-            '201900001',
-            2486
+            shippingAddress: new Address('Baron van der Zanden', null, 'straat', '23', 'Gehucht', '9283DD', 'NL', 'baron@vanderzanden.nl', 'Blok 3', 'CA'),
+            orderNumber: '201900001',
+            weight: 2486,
+            dimensions: new ParcelDimensions(
+                length: 12.34,
+                width: 23.456,
+                height: 34.0,
+            ),
         );
 
         $this->assertEquals(8293794, $parcel->id);
@@ -305,6 +310,9 @@ class ClientTest extends TestCase
         $this->assertNull($parcel->shippingMethodId);
         $this->assertEquals('Blok 3', $parcel->address->addressLine2);
         $this->assertEquals('CA', $parcel->address->countryStateCode);
+        $this->assertEquals(12.34, $parcel->dimensions->length);
+        $this->assertEquals(23.46, $parcel->dimensions->width);
+        $this->assertEquals(34.0, $parcel->dimensions->height);
     }
 
     public function testCreateParcelWithVerboseError(): void
@@ -652,8 +660,8 @@ class ClientTest extends TestCase
 
         $parcel = new Parcel(
             id: 4321,
-            statusId: Parcel::STATUS_ANNOUNCED,
-            statusMessage: 'foo',
+            statusId: Parcel::STATUS_NO_LABEL,
+            statusMessage: 'No label',
             created: new \DateTimeImmutable('2025-08-02'),
             trackingNumber: '5',
             weight: 2500,
