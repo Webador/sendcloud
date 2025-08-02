@@ -31,59 +31,85 @@ class ParcelItem
      * @param array|null $properties List of properties of the product passed along as a JSON object.
      */
     public function __construct(
-        protected string $description,
-        protected int $quantity,
-        protected int $weight,
-        protected float $value,
-        protected ?string $harmonizedSystemCode = null,
-        protected ?string $originCountryCode = null,
-        protected ?string $sku = null,
-        protected ?string $productId = null,
-        protected ?array $properties = null
+        public readonly string $description,
+        public readonly int $quantity,
+        public readonly int $weight,
+        public readonly float $value,
+        public readonly ?string $harmonizedSystemCode = null,
+        public readonly ?string $originCountryCode = null,
+        public readonly ?string $sku = null,
+        public readonly ?string $productId = null,
+        public readonly ?array $properties = null
     ) {
-        $this->value = round($value, 2);
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getDescription(): string
     {
         return $this->description;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getQuantity(): int
     {
         return $this->quantity;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getWeight(): int
     {
         return $this->weight;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getValue(): float
     {
         return $this->value;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getHarmonizedSystemCode(): ?string
     {
         return $this->harmonizedSystemCode;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getOriginCountryCode(): ?string
     {
         return $this->originCountryCode;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getSku(): ?string
     {
         return $this->sku;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getProductId(): ?string
     {
         return $this->productId;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getProperties(): ?array
     {
         return $this->properties;
@@ -92,15 +118,15 @@ class ParcelItem
     public function toArray(): array
     {
         return [
-            'description' => $this->getDescription(),
-            'quantity' => $this->getQuantity(),
-            'weight' => $this->getWeight(),
-            'value' => $this->getValue(),
-            'harmonizedSystemCode' => $this->getHarmonizedSystemCode(),
-            'originCountryCode' => $this->getOriginCountryCode(),
-            'sku' => $this->getSku(),
-            'productId' => $this->getProductId(),
-            'properties' => $this->getProperties(),
+            'description' => $this->description,
+            'quantity' => $this->quantity,
+            'weight' => $this->weight,
+            'value' => $this->value,
+            'harmonizedSystemCode' => $this->harmonizedSystemCode,
+            'originCountryCode' => $this->originCountryCode,
+            'sku' => $this->sku,
+            'productId' => $this->productId,
+            'properties' => $this->properties,
         ];
     }
 }

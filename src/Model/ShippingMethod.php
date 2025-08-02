@@ -60,36 +60,51 @@ class ShippingMethod
      * @param bool $allowsServicePoints
      */
     public function __construct(
-        protected int $id,
-        protected string $name,
-        protected int $minimumWeight,
-        protected int $maximumWeight,
-        protected string $carrier,
-        protected array $prices = [],
-        protected bool $allowsServicePoints = false,
+        public readonly int $id,
+        public readonly string $name,
+        public readonly int $minimumWeight,
+        public readonly int $maximumWeight,
+        public readonly string $carrier,
+        public readonly array $prices = [],
+        public readonly bool $allowsServicePoints = false,
     ) {
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getId(): int
     {
         return $this->id;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getName(): string
     {
         return $this->name;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getMinimumWeight(): int
     {
         return $this->minimumWeight;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getMaximumWeight(): int
     {
         return $this->maximumWeight;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCarrier(): string
     {
         return $this->carrier;
@@ -97,17 +112,24 @@ class ShippingMethod
 
     /**
      * @return array<string, int>
+     * @deprecated Use property.
      */
     public function getPrices(): array
     {
         return $this->prices;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getPriceForCountry(string $countryCode): ?int
     {
         return $this->prices[$countryCode] ?? null;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getAllowsServicePoints(): bool
     {
         return $this->allowsServicePoints;
@@ -116,26 +138,26 @@ class ShippingMethod
     public function toArray(): array
     {
         return [
-            'carrier' => $this->getCarrier(),
-            'id' => $this->getId(),
-            'maximumWeight' => $this->getMaximumWeight(),
-            'minimumWeight' => $this->getMinimumWeight(),
-            'name' => $this->getName(),
-            'prices' => $this->getPrices(),
+            'carrier' => $this->carrier,
+            'id' => $this->id,
+            'maximumWeight' => $this->maximumWeight,
+            'minimumWeight' => $this->minimumWeight,
+            'name' => $this->name,
+            'prices' => $this->prices,
         ];
     }
 
     public function __toString(): string
     {
-        return $this->getName();
+        return $this->name;
     }
 
     public static function compareByCarrierAndName(ShippingMethod $method1, ShippingMethod $method2): int
     {
-        if ($method1->getCarrier() !== $method2->getCarrier()) {
-            return strcasecmp($method1->getCarrier(), $method2->getCarrier());
+        if ($method1->carrier !== $method2->carrier) {
+            return strcasecmp($method1->carrier, $method2->carrier);
         }
 
-        return strcasecmp($method1->getName(), $method2->getName());
+        return strcasecmp($method1->name, $method2->name);
     }
 }

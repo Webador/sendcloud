@@ -40,35 +40,48 @@ class WebhookEvent
         );
     }
 
+    /**
+     * @param value-of<self::TYPES> $type
+     * @param array $payload An array with the payload data specified in the event. Use this for properties that aren't
+     * parsed like parcel (e.g., integration for integration events).
+     * @param \DateTimeImmutable|null $created The time at which this event was triggered. This can differ from the time
+     * the webhook was called.
+     * @param Parcel|null $parcel
+     */
     public function __construct(
-        protected string $type,
-        protected array $payload,
-        protected ?\DateTimeImmutable $created = null,
-        protected ?Parcel $parcel = null,
+        public readonly string $type,
+        public readonly array $payload,
+        public readonly ?\DateTimeImmutable $created = null,
+        public readonly ?Parcel $parcel = null,
     ) {
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getType(): string
     {
         return $this->type;
     }
 
     /**
-     * The time at which this event was triggered. This can differ from the time the webhook was called.
+     * @deprecated Use property.
      */
     public function getCreated(): ?\DateTimeImmutable
     {
         return $this->created;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getParcel(): ?Parcel
     {
         return $this->parcel;
     }
 
     /**
-     * Returns an array with the payload data specified in the event. Use this for properties that aren't parsed like
-     * parcel (e.g., integration for integration events).
+     * @deprecated Use property.
      */
     public function getPayload(): array
     {

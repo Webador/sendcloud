@@ -22,62 +22,6 @@ class ShippingProduct
         self::WEIGHT_UNIT_KILOGRAM,
     ];
 
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getCarrier(): string
-    {
-        return $this->carrier;
-    }
-
-    public function getMinimumWeight(): int
-    {
-        return $this->minimumWeight;
-    }
-
-    public function getMaximumWeight(): int
-    {
-        return $this->maximumWeight;
-    }
-
-    public function getWithReturn(): string
-    {
-        return $this->withReturn;
-    }
-
-    public function getAllowServicePoints(): bool
-    {
-        return $this->allowsServicePoints;
-    }
-
-    public function getMethods(): array
-    {
-        return $this->methods;
-    }
-
-    /**
-     * @param string $name
-     * @param string $carrier Code of the carrier.
-     * @param int $minimumWeight In grams, inclusive.
-     * @param int $maximumWeight In grams, inclusive.
-     * @param bool $allowsServicePoints In grams, inclusive.
-     * @param ShippingMethod[] $methods Shipping methods related to this shipping product.
-     * @param bool $withReturn When true, this shipping product can be used for making a return shipment.
-     */
-    public function __construct(
-        protected string $name,
-        protected string $carrier,
-        protected int $minimumWeight,
-        protected int $maximumWeight,
-        protected bool $withReturn,
-        protected bool $allowsServicePoints = false,
-        protected ShippingMethod|array $methods = [],
-    ) {
-    }
-
     public static function fromData(mixed $data): self
     {
         $allowsServicePoints = in_array(
@@ -123,5 +67,81 @@ class ShippingProduct
             $allowsServicePoints,
             $shippingMethods,
         );
+    }
+
+    /**
+     * @param string $name
+     * @param string $carrier Code of the carrier.
+     * @param int $minimumWeight In grams, inclusive.
+     * @param int $maximumWeight In grams, inclusive.
+     * @param bool $allowsServicePoints In grams, inclusive.
+     * @param ShippingMethod[] $methods Shipping methods related to this shipping product.
+     * @param bool $withReturn When true, this shipping product can be used for making a return shipment.
+     */
+    public function __construct(
+        public readonly string $name,
+        public readonly string $carrier,
+        public readonly int $minimumWeight,
+        public readonly int $maximumWeight,
+        public readonly bool $withReturn,
+        public readonly bool $allowsServicePoints = false,
+        public readonly array $methods = [],
+    ) {
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getCarrier(): string
+    {
+        return $this->carrier;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getMinimumWeight(): int
+    {
+        return $this->minimumWeight;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getMaximumWeight(): int
+    {
+        return $this->maximumWeight;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getWithReturn(): string
+    {
+        return $this->withReturn;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getAllowServicePoints(): bool
+    {
+        return $this->allowsServicePoints;
+    }
+
+    /**
+     * @deprecated Use property.
+     */
+    public function getMethods(): array
+    {
+        return $this->methods;
     }
 }

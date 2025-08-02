@@ -21,7 +21,7 @@ class SendcloudRequestException extends SendcloudClientException
     public function __construct(
         string $message = '',
         int $code = SendcloudRequestException::CODE_UNKNOWN,
-        \Throwable $previous = null,
+        ?\Throwable $previous = null,
         protected ?int $sendcloudCode = null,
         protected ?string $sendcloudMessage = null
     ) {

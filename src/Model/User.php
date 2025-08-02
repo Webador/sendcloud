@@ -19,52 +19,76 @@ class User
     }
 
     public function __construct(
-        protected string $username,
-        protected string $companyName,
-        protected string $phoneNumber,
-        protected string $address,
-        protected string $postalCode,
-        protected string $city,
-        protected string $emailAddress,
-        protected \DateTimeImmutable $registered,
+        public readonly string $username,
+        public readonly string $companyName,
+        public readonly string $phoneNumber,
+        public readonly string $address,
+        public readonly string $postalCode,
+        public readonly string $city,
+        public readonly string $emailAddress,
+        public readonly \DateTimeImmutable $registered,
     ) {
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getUsername(): string
     {
         return $this->username;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCompanyName(): string
     {
         return $this->companyName;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getPhoneNumber(): string
     {
         return $this->phoneNumber;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getAddress(): string
     {
         return $this->address;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getPostalCode(): string
     {
         return $this->postalCode;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getCity(): string
     {
         return $this->city;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getEmailAddress(): string
     {
         return $this->emailAddress;
     }
 
+    /**
+     * @deprecated Use property.
+     */
     public function getRegistered(): \DateTimeImmutable
     {
         return $this->registered;
@@ -73,18 +97,18 @@ class User
     public function toArray(): array
     {
         return [
-            'username' => $this->getUsername(),
-            'companyName' => $this->getCompanyName(),
-            'phoneNumber' => $this->getPhoneNumber(),
-            'address' => $this->getAddress(),
-            'postalCode' => $this->getPostalCode(),
-            'city' => $this->getCity(),
-            'emailAddress' => $this->getEmailAddress(),
+            'username' => $this->username,
+            'companyName' => $this->companyName,
+            'phoneNumber' => $this->phoneNumber,
+            'address' => $this->address,
+            'postalCode' => $this->postalCode,
+            'city' => $this->city,
+            'emailAddress' => $this->emailAddress,
         ];
     }
 
     public function __toString(): string
     {
-        return $this->getUsername();
+        return $this->username;
     }
 }
