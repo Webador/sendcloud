@@ -150,7 +150,7 @@ class Client
      * @param bool|null $withReturn When true, methods returned can be used for making a return shipment.
      * @return ShippingProduct[]
      * @throws SendcloudClientException
-     * @see https://sendcloud.dev/docs/shipping/shipping_products/
+     * @see https://api.sendcloud.dev/docs/sendcloud-public-api/branches/v2/shipping-products/operations/list-shipping-products
      */
     public function getShippingProducts(
         string $fromCountry,
