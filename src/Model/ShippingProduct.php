@@ -6,12 +6,15 @@ class ShippingProduct
 {
     public const DELIVERY_MODE_HOME_DELIVERY = 'home_delivery';
     public const DELIVERY_MODE_MAILBOX = 'mailbox';
+    /** @deprecated Documented, but no longer seems to be supported by API. */
+    public const DELIVERY_MODE_POBOX = 'pobox';
     public const DELIVERY_MODE_SERVICE_POINT = 'service_point';
     public const DELIVERY_MODE_LOCKER = 'locker';
     public const DELIVERY_MODE_LOCKER_OR_SERVICE_POINT = 'locker_or_service_point';
     public const DELIVERY_MODES = [
         self::DELIVERY_MODE_HOME_DELIVERY,
         self::DELIVERY_MODE_MAILBOX,
+        self::DELIVERY_MODE_POBOX,
         self::DELIVERY_MODE_SERVICE_POINT,
         self::DELIVERY_MODE_LOCKER,
         self::DELIVERY_MODE_LOCKER_OR_SERVICE_POINT,
