@@ -739,7 +739,7 @@ class Client
                     'description' => $item->description,
                     'quantity' => $item->quantity,
                     'weight' => number_format($item->weight / 1000, 3),
-                    'value' => number_format($item->value, 2),
+                    'value' => floatval($item->value),
                 ];
                 if ($item->harmonizedSystemCode) {
                     $itemData['hs_code'] = $item->harmonizedSystemCode;
