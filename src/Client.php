@@ -739,7 +739,9 @@ class Client
                     'description' => $item->description,
                     'quantity' => $item->quantity,
                     'weight' => number_format($item->weight / 1000, 3),
-                    'value' => floatval($item->value),
+                    // Sendcloud will error when value contains more than 2 decimal places, yet still wants this to be a
+                    // float instead of a string.
+                    'value' => round($item->value, 2),
                 ];
                 if ($item->harmonizedSystemCode) {
                     $itemData['hs_code'] = $item->harmonizedSystemCode;
