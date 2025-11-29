@@ -702,14 +702,14 @@ class Client
         }
 
         if ($weight) {
-            $parcelData['weight'] = number_format($weight / 1000, 3);
+            $parcelData['weight'] = number_format($weight / 1000, 3, '.', '');
         }
 
         if ($dimensions) {
             // Note that the maximum of 2 decimal places is enforced by the API.
-            $parcelData['length'] = number_format($dimensions->length, 2);
-            $parcelData['width'] = number_format($dimensions->width, 2);
-            $parcelData['height'] = number_format($dimensions->height, 2);
+            $parcelData['length'] = number_format($dimensions->length, 2, '.', '');
+            $parcelData['width'] = number_format($dimensions->width, 2, '.', '');
+            $parcelData['height'] = number_format($dimensions->height, 2, '.', '');
         }
 
         if ($customsInvoiceNumber) {
@@ -738,7 +738,7 @@ class Client
                 $itemData = [
                     'description' => $item->description,
                     'quantity' => $item->quantity,
-                    'weight' => number_format($item->weight / 1000, 3),
+                    'weight' => number_format($item->weight / 1000, 3, '.', ''),
                     // Sendcloud will error when value contains more than 2 decimal places, yet still wants this to be a
                     // float instead of a string.
                     'value' => round($item->value, 2),
